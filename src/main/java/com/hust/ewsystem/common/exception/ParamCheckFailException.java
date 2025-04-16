@@ -1,13 +1,6 @@
 package com.hust.ewsystem.common.exception;
 
-/**
- * @BelongsProject: back
- * @BelongsPackage: com.hust.ewsystem.common.exception
- * @Author: xdy
- * @CreateTime: 2024-11-22  09:54
- * @Description: 参数校验异常
- * @Version: 1.0
- */
+
 public class ParamCheckFailException extends BaseRuntimeException {
 
 	private static final long serialVersionUID = -3850015449550438380L;

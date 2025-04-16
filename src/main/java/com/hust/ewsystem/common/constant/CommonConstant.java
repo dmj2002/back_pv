@@ -1,14 +1,7 @@
 package com.hust.ewsystem.common.constant;
 
 
-/**
- * @BelongsProject: back
- * @BelongsPackage: com.hust.ewsystem.common.constant
- * @Author: xdy
- * @CreateTime: 2024-11-22  09:54
- * @Description: 常量类
- * @Version: 1.0
- */
+
 public class CommonConstant {
 
 	/**

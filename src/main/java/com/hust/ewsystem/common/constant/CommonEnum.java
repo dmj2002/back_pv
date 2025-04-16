@@ -4,14 +4,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * @BelongsProject: back
- * @BelongsPackage: com.hust.ewsystem.common.constant
- * @Author: xdy
- * @CreateTime: 2024-11-22  09:54
- * @Description: 枚举
- * @Version: 1.0
- */
+
 public enum CommonEnum {
 
 	
