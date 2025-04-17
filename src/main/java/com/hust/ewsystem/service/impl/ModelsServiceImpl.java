@@ -310,9 +310,9 @@ public class ModelsServiceImpl extends ServiceImpl<ModelsMapper, Models> impleme
                 taskMap.remove(model.getModelLabel() + "_predict");
                 if (isCancelled) {
                     taskMap.remove(model.getModelLabel() + "_predict");
-                    str =  "任务不存在";
+                    str =  "任务已终止";
                 } else {
-                    str = "任务已终止";
+                    str = "任务终止失败";
                 }
             }
             result.put("modelId", modelId);
