@@ -6,7 +6,7 @@ server:
   ssl:
     enabled: false
   servlet:
-    context-path: /ews
+    context-path: /pvs
     multipart:
       max-file-size: 10MB
       max-request-size: 10MB

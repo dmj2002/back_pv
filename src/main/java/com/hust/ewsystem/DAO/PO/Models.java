@@ -38,7 +38,7 @@ public class Models implements Serializable {
 
     private Integer creatorId;  // 创建者id
 
-    private Integer deviceId;  // 风机id
+    private Integer deviceId;  // 设备id
 
     private Integer modelType;  // 模型类型
 
