@@ -1,7 +1,9 @@
 package com.hust.ewsystem.service.impl;
 
+import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.alibaba.fastjson.TypeReference;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
@@ -9,13 +11,16 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.hust.ewsystem.DAO.DTO.ModelAddDTO;
 import com.hust.ewsystem.DAO.DTO.ModelChangeDTO;
 import com.hust.ewsystem.DAO.DTO.RealToStandMapping;
+import com.hust.ewsystem.DAO.DTO.ThresholdDTO;
 import com.hust.ewsystem.DAO.PO.*;
+import com.hust.ewsystem.DAO.VO.ThresholdVO;
 import com.hust.ewsystem.common.exception.CrudException;
 import com.hust.ewsystem.common.exception.FileException;
 import com.hust.ewsystem.common.result.EwsResult;
 import com.hust.ewsystem.mapper.*;
 import com.hust.ewsystem.service.*;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.ibatis.exceptions.TooManyResultsException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,6 +42,7 @@ import java.util.stream.Collectors;
 @Service
 @Transactional
 @RequiredArgsConstructor
+@Slf4j
 public class ModelsServiceImpl extends ServiceImpl<ModelsMapper, Models> implements ModelsService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ModelsServiceImpl.class);
@@ -319,6 +325,73 @@ public class ModelsServiceImpl extends ServiceImpl<ModelsMapper, Models> impleme
             resultList.add(result);
         }
         return EwsResult.OK(resultList);
+    }
+
+    @Override
+    public EwsResult<?> listModel(int page, int pageSize, Integer companyId, Integer pvFarmId, Integer inverterId, Integer combinerBoxId, Integer algorithmId) {
+        return null;
+    }
+
+    @Override
+    public EwsResult<?> showThreshold(Integer modelId) {
+        String modelLabel = getById(modelId).getModelLabel();
+        List<ThresholdVO> res = new ArrayList<>();
+        try {
+            String resultFilePath = pythonFilePath + "/" + modelLabel + "/model.json";
+            // 强制使用 UTF-8 编码读取文件内容
+            Path path = Paths.get(resultFilePath);
+            if (Files.exists(path)) {
+                StringBuilder contentBuilder = new StringBuilder();
+                try (BufferedReader reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        contentBuilder.append(line);
+                    }
+                }
+                String content = contentBuilder.toString();
+                // 预处理：将 NaN 替换为 null
+                content = content.replace("NaN","null");
+                // 解析 JSON 内容
+                res = JSON.parseObject(content, new TypeReference<List<ThresholdVO>>() {});
+                return EwsResult.OK("获取阈值成功", res);
+            }
+            else{
+                System.out.println("文件不存在: " + resultFilePath);
+                return EwsResult.OK("文件不存在");
+            }
+        } catch (Exception e) {
+            LOGGER.error("打开文件异常",e);
+        }
+        return EwsResult.OK("获取阈值失败");
+    }
+
+    @Override
+    public EwsResult<?> changeThreshold(ThresholdDTO thresholdDTO) {
+        Integer modelId = thresholdDTO.getModelId();
+        String modelLabel = getById(modelId).getModelLabel();
+        List<ThresholdVO> items = thresholdDTO.getItems();
+        File resultFile = new File(pythonFilePath + modelLabel + "/model.json");
+        // 尝试创建文件或覆盖已有文件
+        try {
+            if (resultFile.exists()) {
+                boolean deleted = resultFile.delete();
+                if (!deleted) {
+                    return EwsResult.error("修改阈值失败"); // 如果无法删除文件，结束方法
+                }
+            }
+            // 创建新文件
+            boolean fileCreated = resultFile.createNewFile();
+            if (fileCreated) {
+                System.out.println("文件创建成功: " + resultFile.getAbsolutePath());
+                //写入结果到文件
+                writeFileContent(resultFile.getAbsoluteFile(), items);
+            } else {
+                return EwsResult.error("修改阈值失败");
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return EwsResult.OK("修改阈值成功");
     }
 
     private void predict(Integer alertInterval, String modelLabel, String algorithmLabel, Integer modelId, Integer alertWindowSize,Integer deviceId) {
@@ -766,5 +839,14 @@ public class ModelsServiceImpl extends ServiceImpl<ModelsMapper, Models> impleme
             }
         }
         dir.delete();
+    }
+    public static void writeFileContent(File file, List<ThresholdVO> items) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
+            String content = JSON.toJSONString(items); // 转换为 JSON 字符串
+            content = content.replace("null","NaN");
+            writer.write(content);  // 写入内容
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }
