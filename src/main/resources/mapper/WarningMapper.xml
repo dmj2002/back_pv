@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hust.ewsystem.mapper.WarningMapper">
+
+    <resultMap id="standPointMap" type="com.hust.ewsystem.DAO.VO.StandPointVO">
+        <result property="modelType" column="model_type"/>
+        <collection property="points" ofType="com.hust.ewsystem.DAO.PO.StandPoint">
+        </collection>
+    </resultMap>
+
+    <select id="getStandPointByWarningId" resultMap = "standPointMap">
+        SELECT sp.*,m.model_type
+        FROM warnings w
+        JOIN models m ON w.model_id = m.model_id
+        JOIN algorithms a ON m.algorithm_id = a.algorithm_id
+        JOIN algorithm_stand_relate asr ON a.algorithm_id = asr.algorithm_id
+        JOIN stand_point sp ON asr.stand_point_id = sp.stand_point_id
+        where w.warning_id = #{warningId}
+    </select>
+</mapper>

@@ -69,7 +69,7 @@ public class ModelsServiceImpl extends ServiceImpl<ModelsMapper, Models> impleme
     // 任务状态
     private final Map<String, ScheduledFuture<?>> taskMap = new ConcurrentHashMap<>();
     // 线程池
-    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(128);
+    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(512);
 
     @Override
     public EwsResult<?> addModel(ModelAddDTO modelAddDTO) {

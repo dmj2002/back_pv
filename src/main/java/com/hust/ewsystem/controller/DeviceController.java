@@ -4,8 +4,11 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.hust.ewsystem.DAO.PO.BoxTrans;
 import com.hust.ewsystem.DAO.PO.CombinerBox;
 import com.hust.ewsystem.DAO.PO.Inverter;
+import com.hust.ewsystem.DAO.PO.StandPoint;
 import com.hust.ewsystem.DAO.VO.DeviceGetVO;
+import com.hust.ewsystem.DAO.VO.StandPointVO;
 import com.hust.ewsystem.common.result.EwsResult;
+import com.hust.ewsystem.mapper.WarningsMapper;
 import com.hust.ewsystem.service.BoxTransService;
 import com.hust.ewsystem.service.CombinerBoxService;
 import com.hust.ewsystem.service.InverterService;
@@ -18,6 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/device")
@@ -32,8 +36,10 @@ public class DeviceController {
 
     private final CombinerBoxService combinerBoxService;
 
+    private final WarningsMapper warningsMapper;
+
     @GetMapping("/list")
-    public EwsResult<?> turbineList(@RequestParam(value = "pvFarmId") Integer pvFarmId) {
+    public EwsResult<?> deviceList(@RequestParam(value = "pvFarmId") Integer pvFarmId) {
         Integer pvFarmType = pvFarmService.getById(pvFarmId).getPvFarmType();
         List<DeviceGetVO> deviceGetVOList = new ArrayList<>();
         switch (pvFarmType) {
@@ -71,5 +77,15 @@ public class DeviceController {
             default:
                 return EwsResult.error("不支持的电站类型");
         }
+    }
+    @GetMapping("/getDeviceInfo")
+    public EwsResult<?> getDeviceInfo(@RequestParam(value = "warningId") Integer warningId){
+        StandPointVO standPointByWarningId = warningsMapper.getStandPointByWarningId(warningId);
+        if (standPointByWarningId == null) {
+            return EwsResult.error("查询失败");
+        }
+        Integer modelType = standPointByWarningId.getModelType();
+        List<StandPoint> filterPointList = standPointByWarningId.getPoints().stream().filter(point -> (modelType == 0 && point.getPointType() == 0) || (modelType != 0 && (point.getPointType() == modelType || point.getPointType() == 0))).collect(Collectors.toList());
+        return EwsResult.OK("查询成功", filterPointList);
     }
 }
