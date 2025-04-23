@@ -49,11 +49,11 @@ public class DeviceController {
                     DeviceGetVO deviceGetVO = new DeviceGetVO();
                     deviceGetVO.setBoxTrans(boxTrans);
                     List<DeviceGetVO.InnerDeviceInfo> innerDeviceInfoList = new ArrayList<>();
-                    List<Inverter> inverters = inverterService.list(new QueryWrapper<Inverter>().eq("box_id", boxTrans.getBoxId()));
+                    List<Inverter> inverters = inverterService.list(new QueryWrapper<Inverter>().eq("box_id", boxTrans.getId()));
                     for(Inverter inverter : inverters) {
                         DeviceGetVO.InnerDeviceInfo innerDeviceInfo = new DeviceGetVO.InnerDeviceInfo();
                         innerDeviceInfo.setInverter(inverter);
-                        List<CombinerBox> combinerBoxes = combinerBoxService.list(new QueryWrapper<CombinerBox>().eq("inverter_id", inverter.getId()).eq("box_id", boxTrans.getBoxId()));
+                        List<CombinerBox> combinerBoxes = combinerBoxService.list(new QueryWrapper<CombinerBox>().eq("inverter_id", inverter.getId()).eq("box_id", boxTrans.getId()));
                         innerDeviceInfo.setCombinerBoxList(combinerBoxes);
                         innerDeviceInfoList.add(innerDeviceInfo);
                     }
@@ -66,7 +66,7 @@ public class DeviceController {
                     DeviceGetVO deviceGetVO = new DeviceGetVO();
                     deviceGetVO.setBoxTrans(boxTrans);
                     List<DeviceGetVO.InnerDeviceInfo> innerDeviceInfoList = new ArrayList<>();
-                    List<Inverter> inverters = inverterService.list(new QueryWrapper<Inverter>().eq("box_id", boxTrans.getBoxId()));
+                    List<Inverter> inverters = inverterService.list(new QueryWrapper<Inverter>().eq("box_id", boxTrans.getId()));
                     for(Inverter inverter : inverters) {
                         DeviceGetVO.InnerDeviceInfo innerDeviceInfo = new DeviceGetVO.InnerDeviceInfo();
                         innerDeviceInfo.setInverter(inverter);

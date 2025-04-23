@@ -3,22 +3,26 @@ package com.hust.ewsystem.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.hust.ewsystem.DAO.DTO.QueryWarnDetailsDTO;
+import com.hust.ewsystem.DAO.DTO.TrendDataDTO;
 import com.hust.ewsystem.DAO.PO.*;
 import com.hust.ewsystem.common.exception.CrudException;
 import com.hust.ewsystem.common.result.EwsResult;
+import com.hust.ewsystem.mapper.StandPointMapper;
 import com.hust.ewsystem.mapper.WarningsMapper;
 import com.hust.ewsystem.service.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -26,6 +30,8 @@ import java.util.stream.Collectors;
 @Transactional
 @RequiredArgsConstructor
 public class WarningsServiceImpl extends ServiceImpl<WarningsMapper, Warnings> implements WarningsService {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(WarningsServiceImpl.class);
 
     private final CombinerBoxService combinerBoxService;
 
@@ -35,6 +41,11 @@ public class WarningsServiceImpl extends ServiceImpl<WarningsMapper, Warnings> i
 
     private final ModelsService modelsService;
 
+    private final StandRealRelateService standRealRelateService;
+
+    private final StandPointMapper standPointMapper;
+
+    private final RealPointService realPointService;
     @Override
     public EwsResult<?> getWarningList(int page, int pageSize, String startDate, String endDate, Integer warningLevel, Integer companyId, Integer pvFarmId, Integer inverterId, Integer combinerBoxId) {
         QueryWrapper<Models> queryWrapper = new QueryWrapper<>();
@@ -88,5 +99,92 @@ public class WarningsServiceImpl extends ServiceImpl<WarningsMapper, Warnings> i
         result.put("page_size",page1.getSize());
         result.put("total_pages",page1.getPages());
         return EwsResult.OK("查询成功", result);
+    }
+
+    @Override
+    public EwsResult<?> getWarningNowList(int page, int pageSize, Integer warningLevel, Integer companyId, Integer pvFarmId, Integer inverterId, Integer combinerBoxId) {
+        QueryWrapper<Models> queryWrapper = new QueryWrapper<>();
+        List<Integer> modelIdlist = new ArrayList<>();
+        if(pvFarmId != null){
+            List<Integer> boxIds = boxTransService.list(new QueryWrapper<BoxTrans>().eq("pv_farm_id", pvFarmId)).stream().map(BoxTrans::getId).collect(Collectors.toList());
+            List<Integer> combinerIds = combinerBoxService.list(new QueryWrapper<CombinerBox>().in("box_id", boxIds)).stream().map(CombinerBox::getId).collect(Collectors.toList());
+            List<Integer> inverterIds = inverterService.list(new QueryWrapper<Inverter>().in("box_id", boxIds)).stream().map(Inverter::getId).collect(Collectors.toList());
+            queryWrapper.nested(wrapper -> wrapper.in("device_id", inverterIds).eq("model_type", 2))
+                    .or(wrapper -> wrapper.in("device_id", combinerIds).eq("model_type", 1));
+            modelIdlist = modelsService.list(queryWrapper).stream().map(Models::getModelId).collect(Collectors.toList());
+        }else if(inverterId != null) {
+            List<Integer> combinerIds = combinerBoxService.list(new QueryWrapper<CombinerBox>().eq("inverter_id", inverterId)).stream().map(CombinerBox::getId).collect(Collectors.toList());
+            queryWrapper.nested(wrapper -> wrapper.eq("device_id", inverterId).eq("model_type", 2))
+                    .or(wrapper -> wrapper.in("device_id", combinerIds).eq("model_type", 1));
+            modelIdlist = modelsService.list(queryWrapper).stream().map(Models::getModelId).collect(Collectors.toList());
+
+        }else if(combinerBoxId != null) {
+            queryWrapper.eq("device_id", combinerBoxId)
+                    .eq("model_type", 1);
+            modelIdlist = modelsService.list(queryWrapper).stream().map(Models::getModelId).collect(Collectors.toList());
+        }else{
+            List<Integer> boxIds = boxTransService.list().stream().map(BoxTrans::getId).collect(Collectors.toList());
+            List<Integer> combinerIds = combinerBoxService.list(new QueryWrapper<CombinerBox>().in("box_id", boxIds)).stream().map(CombinerBox::getId).collect(Collectors.toList());
+            List<Integer> inverterIds = inverterService.list(new QueryWrapper<Inverter>().in("box_id", boxIds)).stream().map(Inverter::getId).collect(Collectors.toList());
+            queryWrapper.nested(wrapper -> wrapper.in("device_id", inverterIds).eq("model_type", 2))
+                    .or(wrapper -> wrapper.in("device_id", combinerIds).eq("model_type", 1));
+            modelIdlist = modelsService.list(queryWrapper).stream().map(Models::getModelId).collect(Collectors.toList());
+        }
+        Page<Warnings> warningsPage = new Page<>(page, pageSize);
+        QueryWrapper<Warnings> queryWrapper2 = new QueryWrapper<>();
+        queryWrapper2.in("model_id", modelIdlist);
+        if(warningLevel != null){
+            queryWrapper2.eq("warning_level", warningLevel);
+        }
+        Page<Warnings> page1 = page(warningsPage, queryWrapper2);
+        Map<String,Object> result = new HashMap<>();
+        if(!page1.getRecords().isEmpty()){
+            result.put("warningList",page1.getRecords());
+        }else {
+            result.put("warningList",new ArrayList<>());
+        }
+        result.put("total_count",page1.getTotal());
+        result.put("page",page1.getCurrent());
+        result.put("page_size",page1.getSize());
+        result.put("total_pages",page1.getPages());
+        return EwsResult.OK("查询成功", result);
+    }
+
+    @Override
+    public EwsResult<?> getWarningTrendData(QueryWarnDetailsDTO queryWarnDetailsDTO) {
+        List<Integer> standPointIdList = queryWarnDetailsDTO.getPointIdList();
+        QueryWrapper<StandRealRelate> queryWrapper;
+        QueryWrapper<RealPoint> realPointQueryWrapper;
+        List<Map<Integer, RealPoint>> relPointAndLableList = new ArrayList<>();
+        Map<Integer,RealPoint> relPointAndLableMap;
+        for (Integer standPointId : standPointIdList) {
+            StandPoint standPoint = standPointMapper.selectById(standPointId);
+            queryWrapper = new QueryWrapper<>();
+            queryWrapper.lambda().eq(StandRealRelate::getStandPointId,standPointId);
+            List<StandRealRelate> standRealRelateList = standRealRelateService.list(queryWrapper);
+            if (CollectionUtils.isEmpty(standRealRelateList)){
+                LOGGER.error(String.format("标准测点id【%s】与对应的真实测点关联关系不存在",standPointId));
+                return EwsResult.error("测点不存在,请检查参数后重试",null);
+            }
+            List<Integer> realPointList = new ArrayList<>();
+            for (StandRealRelate standRealRelate : standRealRelateList) {
+                realPointList.add(standRealRelate.getRealPointId());
+            }
+            realPointQueryWrapper = new QueryWrapper<>();
+            realPointQueryWrapper.lambda().in(RealPoint::getPointId,realPointList).eq(RealPoint::getDeviceId,queryWarnDetailsDTO.getDeviceId()).eq(RealPoint::getPointType,standPoint.getPointType());
+            RealPoint realPoint = realPointService.getOne(realPointQueryWrapper);
+            if (Objects.isNull(realPoint)){
+                String realIdList = StringUtils.join(realPointList, ",");
+                LOGGER.error(String.format("获取真实测点信息为空,真实测点id【%s】,设备id【%d】",realIdList,queryWarnDetailsDTO.getDeviceId()));
+                return EwsResult.error("测点不存在,请检查参数后重试",null);
+            }
+            relPointAndLableMap = new HashMap<>();
+            relPointAndLableMap.put(realPoint.getPointId(), realPoint);
+            relPointAndLableList.add(relPointAndLableMap);
+        }
+
+        // 查询测点值
+        List<TrendDataDTO> realPointValueList = realPointService.getRealPointValueList(relPointAndLableList, queryWarnDetailsDTO);
+        return EwsResult.OK(realPointValueList);
     }
 }

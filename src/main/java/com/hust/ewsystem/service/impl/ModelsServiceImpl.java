@@ -825,7 +825,7 @@ public class ModelsServiceImpl extends ServiceImpl<ModelsMapper, Models> impleme
         }
         return new RealToStandMapping(realTostandPointMap, realLabelToStandLabelMap);
     }
-    private static String getTableName(Integer type) {
+    public static String getTableName(Integer type) {
         switch (type) {
             case 0:
                 return "pvfarm";
