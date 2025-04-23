@@ -18,8 +18,6 @@ public class BoxTrans implements Serializable {
     @TableId(type = IdType.AUTO)
     private Integer id;
 
-    private Integer boxId;
-
     private String boxName;
 
     private Integer pvFarmId;

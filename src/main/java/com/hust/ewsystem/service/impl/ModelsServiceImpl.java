@@ -7,6 +7,7 @@ import com.alibaba.fastjson.TypeReference;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.hust.ewsystem.DAO.DTO.ModelAddDTO;
 import com.hust.ewsystem.DAO.DTO.ModelChangeDTO;
@@ -65,6 +66,14 @@ public class ModelsServiceImpl extends ServiceImpl<ModelsMapper, Models> impleme
     private final TasksMapper tasksMapper;
 
     private final WarningsService warningService;
+
+    private final AlgorithmsMapper algorithmsMapper;
+
+    private final CombinerBoxService combinerBoxService;
+
+    private final BoxTransService boxTransService;
+
+    private final InverterService inverterService;
 
     // 任务状态
     private final Map<String, ScheduledFuture<?>> taskMap = new ConcurrentHashMap<>();
@@ -329,7 +338,66 @@ public class ModelsServiceImpl extends ServiceImpl<ModelsMapper, Models> impleme
 
     @Override
     public EwsResult<?> listModel(int page, int pageSize, Integer companyId, Integer pvFarmId, Integer inverterId, Integer combinerBoxId, Integer algorithmId) {
-        return null;
+        Page<Models> modelsPage = new Page<>(page, pageSize);
+        QueryWrapper<Models> queryWrapper = new QueryWrapper<>();
+        if(algorithmId != null){
+            queryWrapper.eq("algorithm_id", algorithmId);
+        }
+        if(pvFarmId != null){
+            List<Integer> boxIds = boxTransService.list(new QueryWrapper<BoxTrans>().eq("pv_farm_id", pvFarmId)).stream().map(BoxTrans::getId).collect(Collectors.toList());
+            List<Integer> combinerIds = combinerBoxService.list(new QueryWrapper<CombinerBox>().in("box_id", boxIds)).stream().map(CombinerBox::getId).collect(Collectors.toList());
+            List<Integer> inverterIds = inverterService.list(new QueryWrapper<Inverter>().in("box_id", boxIds)).stream().map(Inverter::getId).collect(Collectors.toList());
+            queryWrapper.nested(wrapper -> wrapper.in("device_id", inverterIds).eq("model_type", 2))
+                    .or(wrapper -> wrapper.in("device_id", combinerIds).eq("model_type", 1));
+            Page<Models> res = page(modelsPage, queryWrapper);
+            return getEwsResult(res);
+        }else if(inverterId != null) {
+            List<Integer> combinerIds = combinerBoxService.list(new QueryWrapper<CombinerBox>().eq("inverter_id", inverterId)).stream().map(CombinerBox::getId).collect(Collectors.toList());
+            queryWrapper.nested(wrapper -> wrapper.eq("device_id", inverterId).eq("model_type", 2))
+                    .or(wrapper -> wrapper.in("device_id", combinerIds).eq("model_type", 1));
+            Page<Models> res = page(modelsPage, queryWrapper);
+            return getEwsResult(res);
+
+        }else if(combinerBoxId != null) {
+            queryWrapper.eq("device_id", combinerBoxId)
+                    .eq("model_type", 1);
+            Page<Models> res = page(modelsPage, queryWrapper);
+            return getEwsResult(res);
+        }else{
+            List<Integer> boxIds = boxTransService.list().stream().map(BoxTrans::getId).collect(Collectors.toList());
+            List<Integer> combinerIds = combinerBoxService.list(new QueryWrapper<CombinerBox>().in("box_id", boxIds)).stream().map(CombinerBox::getId).collect(Collectors.toList());
+            List<Integer> inverterIds = inverterService.list(new QueryWrapper<Inverter>().in("box_id", boxIds)).stream().map(Inverter::getId).collect(Collectors.toList());
+            queryWrapper.nested(wrapper -> wrapper.in("device_id", inverterIds).eq("model_type", 2))
+                    .or(wrapper -> wrapper.in("device_id", combinerIds).eq("model_type", 1));
+            Page<Models> res = page(modelsPage, queryWrapper);
+            return getEwsResult(res);
+        }
+    }
+
+    private EwsResult<?> getEwsResult(Page<Models> res) {
+        if (res.getRecords().isEmpty() || res.getRecords() == null) {
+            return EwsResult.error("查询结果为空");
+        }
+        List<Models> records = res.getRecords();
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (Models model : records) {
+            Map<String, Object> map = new HashMap<>();
+            map.put("modelId", model.getModelId());
+            map.put("modelLabel", model.getModelLabel());
+            map.put("modelName", model.getModelName());
+            map.put("modelVersion", model.getModelVersion());
+            map.put("algorithmId", model.getAlgorithmId());
+            map.put("algorithmName",algorithmsMapper.selectById(model.getAlgorithmId()).getAlgorithmName());
+            map.put("modelStatus", model.getModelStatus());
+            result.add(map);
+        }
+        Map<String,Object> response = new HashMap<>();
+        response.put("total_count", res.getTotal());
+        response.put("page", res.getCurrent());
+        response.put("page_size", res.getSize());
+        response.put("total_pages", res.getPages());
+        response.put("modelList",result);
+        return EwsResult.OK("查询成功", response);
     }
 
     @Override
