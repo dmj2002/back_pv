@@ -1,5 +1,6 @@
 package com.hust.ewsystem.controller;
 
+import com.hust.ewsystem.DAO.DTO.QueryPvWarnMatrixDTO;
 import com.hust.ewsystem.DAO.DTO.QueryWarnDetailsDTO;
 import com.hust.ewsystem.common.result.EwsResult;
 import com.hust.ewsystem.service.WarningsService;
@@ -40,5 +41,9 @@ public class WarningsController {
     @PostMapping("/trendData")
     public EwsResult<?> getWarningTrendData(@RequestBody QueryWarnDetailsDTO queryWarnDetailsDTO){
         return warningsService.getWarningTrendData(queryWarnDetailsDTO);
+    }
+    @RequestMapping(value = "/queryTurbineWarnMatrix",method = RequestMethod.POST)
+    public EwsResult<?> queryTurbineWarnMatrix(@RequestBody QueryPvWarnMatrixDTO queryPvWarnMatrixDTO){
+        return warningsService.queryTurbineWarnMatrix(queryPvWarnMatrixDTO);
     }
 }

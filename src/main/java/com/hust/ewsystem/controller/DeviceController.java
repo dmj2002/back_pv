@@ -88,4 +88,20 @@ public class DeviceController {
         List<StandPoint> filterPointList = standPointByWarningId.getPoints().stream().filter(point -> (modelType == 0 && point.getPointType() == 0) || (modelType != 0 && (point.getPointType() == modelType || point.getPointType() == 0))).collect(Collectors.toList());
         return EwsResult.OK("查询成功", filterPointList);
     }
+    @GetMapping("/getDeviceName")
+    public EwsResult<?> getDeviceName(@RequestParam(value = "deviceId") Integer deviceId,
+                                      @RequestParam(value = "deviceType") Integer deviceType) {
+        if(deviceType == 0) {
+            String pvFarmName = pvFarmService.getById(deviceId).getPvFarmName();
+            return EwsResult.OK("查询成功", pvFarmName);
+        }else if(deviceType == 1) {
+            String combinerBoxName = combinerBoxService.getById(deviceId).getCombinerBoxName();
+            return EwsResult.OK("查询成功", combinerBoxName);
+        }else if(deviceType == 2) {
+            String inverterName = inverterService.getById(deviceId).getInverterName();
+            return EwsResult.OK("查询成功", inverterName);
+        }else{
+            return EwsResult.error("查询失败,不包含次设备类型");
+        }
+    }
 }

@@ -1,12 +1,15 @@
 package com.hust.ewsystem.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.hust.ewsystem.DAO.DTO.QueryPvWarnMatrixDTO;
 import com.hust.ewsystem.DAO.DTO.QueryWarnDetailsDTO;
 import com.hust.ewsystem.DAO.DTO.TrendDataDTO;
+import com.hust.ewsystem.DAO.DTO.WarnCountDTO;
 import com.hust.ewsystem.DAO.PO.*;
-import com.hust.ewsystem.common.exception.CrudException;
+import com.hust.ewsystem.DAO.VO.PvWarnMatrixVO;
 import com.hust.ewsystem.common.result.EwsResult;
 import com.hust.ewsystem.mapper.StandPointMapper;
 import com.hust.ewsystem.mapper.WarningsMapper;
@@ -46,6 +49,12 @@ public class WarningsServiceImpl extends ServiceImpl<WarningsMapper, Warnings> i
     private final StandPointMapper standPointMapper;
 
     private final RealPointService realPointService;
+
+    private final PvFarmService pvFarmService;
+
+    private final WarningsService warningsService;
+
+
     @Override
     public EwsResult<?> getWarningList(int page, int pageSize, String startDate, String endDate, Integer warningLevel, Integer companyId, Integer pvFarmId, Integer inverterId, Integer combinerBoxId) {
         QueryWrapper<Models> queryWrapper = new QueryWrapper<>();
@@ -186,5 +195,74 @@ public class WarningsServiceImpl extends ServiceImpl<WarningsMapper, Warnings> i
         // 查询测点值
         List<TrendDataDTO> realPointValueList = realPointService.getRealPointValueList(relPointAndLableList, queryWarnDetailsDTO);
         return EwsResult.OK(realPointValueList);
+    }
+
+    @Override
+    public EwsResult<?> queryTurbineWarnMatrix(QueryPvWarnMatrixDTO queryPvWarnMatrixDTO) {
+        List<PvFarm> pvFarmList = getPvFarmList(queryPvWarnMatrixDTO.getPvFarmId());
+        List<PvWarnMatrixVO> result = new ArrayList<>();
+        WarnCountDTO warnCountDTO;
+        PvWarnMatrixVO pvWarnMatrixVO;
+        for(PvFarm pvFarm : pvFarmList){
+            pvWarnMatrixVO = new PvWarnMatrixVO();
+            pvWarnMatrixVO.setPvFarmName(pvFarm.getPvFarmName());
+            Integer pvFarmId = pvFarm.getId();
+            List<Integer> boxIds = boxTransService.list(new QueryWrapper<BoxTrans>().eq("pv_farm_id", pvFarmId)).stream().map(BoxTrans::getId).collect(Collectors.toList());
+            List<Integer> combinerIds = combinerBoxService.list(new QueryWrapper<CombinerBox>().in("box_id", boxIds)).stream().map(CombinerBox::getId).collect(Collectors.toList());
+            List<Integer> inverterIds = inverterService.list(new QueryWrapper<Inverter>().in("box_id", boxIds)).stream().map(Inverter::getId).collect(Collectors.toList());
+            List<WarnCountDTO> warnCounts = new ArrayList<>();
+            Map<Integer,Integer> combinerAndInverterMap = new HashMap<>();
+            for(Integer combinerId : combinerIds){
+                warnCountDTO = new WarnCountDTO();
+                warnCountDTO.setDeviceId(combinerId);
+                warnCountDTO.setDeviceType(1);
+                int warnCount = getWarnCount(combinerId,1,queryPvWarnMatrixDTO);
+                combinerAndInverterMap.put(combinerId, warnCount);
+                warnCountDTO.setWarnCount(warnCount);
+                warnCounts.add(warnCountDTO);
+            }
+            for(Integer inverterId : inverterIds){
+                warnCountDTO = new WarnCountDTO();
+                warnCountDTO.setDeviceId(inverterId);
+                warnCountDTO.setDeviceType(2);
+                int warnCount = getWarnCount(inverterId, 2, queryPvWarnMatrixDTO) +
+                        combinerBoxService.list(new QueryWrapper<CombinerBox>().eq("inverter_id", inverterId)).stream()
+                                .filter(combinerBox -> combinerAndInverterMap.containsKey(combinerBox.getId()))
+                                .mapToInt(combinerBox -> combinerAndInverterMap.get(combinerBox.getId()))
+                                .sum();
+                warnCountDTO.setWarnCount(warnCount);
+                warnCounts.add(warnCountDTO);
+            }
+            pvWarnMatrixVO.setWarnCountList(warnCounts);
+            result.add(pvWarnMatrixVO);
+        }
+        return EwsResult.OK(result);
+    }
+
+    private int getWarnCount(Integer deviceId,Integer deviceType, QueryPvWarnMatrixDTO queryPvWarnMatrixDTO) {
+        int warnCount = 0;
+        LambdaQueryWrapper<Models> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(Models::getDeviceId, deviceId).eq(Models::getModelType, deviceType);
+        List<Integer> modelIds = modelsService.list(queryWrapper).stream().map(Models::getModelId).collect(Collectors.toList());
+        LambdaQueryWrapper<Warnings> warningsWrapper = new LambdaQueryWrapper<>();
+        warningsWrapper.in(Warnings::getModelId,modelIds)
+                .ge(Warnings::getStartTime,queryPvWarnMatrixDTO.getStartDate()).le(Warnings::getEndTime,queryPvWarnMatrixDTO.getEndDate());
+        List<Warnings> warnings = warningsService.list(warningsWrapper);
+        if (!CollectionUtils.isEmpty(warnings)){
+            warnCount += warnings.size();
+        }
+        return warnCount;
+    }
+
+    public List<PvFarm> getPvFarmList(Integer pvFarmId){
+        List<PvFarm> list;
+        if(Objects.isNull(pvFarmId)){
+            list = pvFarmService.list();
+        } else {
+            LambdaQueryWrapper<PvFarm> wrapper = new LambdaQueryWrapper<>();
+            wrapper.eq(PvFarm::getId,pvFarmId);
+            list = pvFarmService.list(wrapper);
+        }
+        return list;
     }
 }
