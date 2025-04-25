@@ -17,4 +17,14 @@
         JOIN stand_point sp ON asr.stand_point_id = sp.stand_point_id
         where w.warning_id = #{warningId}
     </select>
+
+    <select id="getDeviceByWarningIdList" resultType="com.hust.ewsystem.DAO.DTO.DeviceDTO">
+        SELECT DISTINCT device_id AS deviceId,device_type AS deviceType
+        FROM warnings w
+        LEFT JOIN models m ON w.model_id = m.model_id
+        WHERE w.warning_id IN
+        <foreach item="warningId" index="index" collection="records" open="(" separator="," close=")">
+            #{warningId}
+        </foreach>
+    </select>
 </mapper>

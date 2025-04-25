@@ -38,4 +38,8 @@ public class Warnings implements Serializable {
 
     private Integer taskId; // 任务id
 
+    private Integer valid;//有效
+
+    private Integer repetition;//重复
+
 }

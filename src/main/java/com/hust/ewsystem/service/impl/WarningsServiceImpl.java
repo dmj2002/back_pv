@@ -4,10 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.hust.ewsystem.DAO.DTO.QueryPvWarnMatrixDTO;
-import com.hust.ewsystem.DAO.DTO.QueryWarnDetailsDTO;
-import com.hust.ewsystem.DAO.DTO.TrendDataDTO;
-import com.hust.ewsystem.DAO.DTO.WarnCountDTO;
+import com.hust.ewsystem.DAO.DTO.*;
 import com.hust.ewsystem.DAO.PO.*;
 import com.hust.ewsystem.DAO.VO.PvWarnMatrixVO;
 import com.hust.ewsystem.common.result.EwsResult;
@@ -52,7 +49,7 @@ public class WarningsServiceImpl extends ServiceImpl<WarningsMapper, Warnings> i
 
     private final PvFarmService pvFarmService;
 
-    private final WarningsService warningsService;
+    private final WarningsMapper warningsMapper;
 
 
     @Override
@@ -239,6 +236,11 @@ public class WarningsServiceImpl extends ServiceImpl<WarningsMapper, Warnings> i
         return EwsResult.OK(result);
     }
 
+    @Override
+    public List<DeviceDTO> getDeviceByWarningIdList(List<Integer> warningId) {
+        return warningsMapper.getDeviceByWarningIdList(warningId);
+    }
+
     private int getWarnCount(Integer deviceId,Integer deviceType, QueryPvWarnMatrixDTO queryPvWarnMatrixDTO) {
         int warnCount = 0;
         LambdaQueryWrapper<Models> queryWrapper = new LambdaQueryWrapper<>();
@@ -247,7 +249,7 @@ public class WarningsServiceImpl extends ServiceImpl<WarningsMapper, Warnings> i
         LambdaQueryWrapper<Warnings> warningsWrapper = new LambdaQueryWrapper<>();
         warningsWrapper.in(Warnings::getModelId,modelIds)
                 .ge(Warnings::getStartTime,queryPvWarnMatrixDTO.getStartDate()).le(Warnings::getEndTime,queryPvWarnMatrixDTO.getEndDate());
-        List<Warnings> warnings = warningsService.list(warningsWrapper);
+        List<Warnings> warnings = list(warningsWrapper);
         if (!CollectionUtils.isEmpty(warnings)){
             warnCount += warnings.size();
         }
