@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hust.ewsystem.mapper.PvFarmMapper">
+
+
+
+    <resultMap id="PvFarmWithTurbinesResultMap" type="com.hust.ewsystem.DAO.DTO.PvFarmDTO">
+        <id property="PvFarmId" column="pv_farm_id"/>
+        <result property="PvFarmName" column="pv_farm_name"/>
+        <result property="companyId" column="company_id"/>
+        <result property="companyName" column="company_name"/>
+        <collection property="inverterWaitDoneInfo" ofType="com.hust.ewsystem.DAO.DTO.InverterWaitDoneDTO">
+            <id property="deviceId" column="inverter_id"/>
+            <result property="deviceName" column="inverter_name"/>
+            <collection property="combinerBoxWaitDoneInfo" ofType="com.hust.ewsystem.DAO.DTO.CombinerBoxWaitDoneDTO">
+                <id property="deviceId" column="combiner_box_id"/>
+                <result property="deviceName" column="combiner_box_name"/>
+            </collection>
+        </collection>
+    </resultMap>
+
+    <select id="getPvFarmsByCompanyId" resultMap="PvFarmWithTurbinesResultMap">
+        SELECT
+        pf.pv_farm_id,
+        pf.pv_farm_name,
+        c.company_id,
+        c.company_name,
+        i.id as inverter_id,
+        i.inverter_name,
+        cb.id as combiner_box_id,
+        cb.combiner_box_name,
+        FROM pv_farm pf
+        JOIN company c ON pf.company_id = c.company_id
+        JOIN box_trans bt ON bt.pv_farm_id = pf.id
+        JOIN inverter i ON i.box_id = bt.id
+        JOIN combiner_box cb ON cb.box_id = bt.id and cb.inverter_id = i.id
+        WHERE pf.company_id = #{param.companyId};
+
+    </select>
+
+</mapper>
