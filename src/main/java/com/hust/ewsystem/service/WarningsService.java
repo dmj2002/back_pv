@@ -10,6 +10,7 @@ import com.hust.ewsystem.DAO.PO.Warnings;
 import com.hust.ewsystem.DAO.VO.WarningsVO;
 import com.hust.ewsystem.common.result.EwsResult;
 
+import javax.validation.Valid;
 import java.util.List;
 
 
