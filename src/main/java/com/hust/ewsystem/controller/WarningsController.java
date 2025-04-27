@@ -1,12 +1,11 @@
 package com.hust.ewsystem.controller;
 
-import com.hust.ewsystem.DAO.DTO.DeviceDTO;
-import com.hust.ewsystem.DAO.DTO.QueryPvWarnMatrixDTO;
-import com.hust.ewsystem.DAO.DTO.QueryWarnDetailsDTO;
-import com.hust.ewsystem.DAO.DTO.WarningOperateDTO;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.hust.ewsystem.DAO.DTO.*;
 import com.hust.ewsystem.DAO.PO.ReportWarningRelate;
 import com.hust.ewsystem.DAO.PO.Reports;
 import com.hust.ewsystem.DAO.PO.Warnings;
+import com.hust.ewsystem.DAO.VO.WarningsVO;
 import com.hust.ewsystem.common.exception.CrudException;
 import com.hust.ewsystem.common.result.EwsResult;
 import com.hust.ewsystem.mapper.ReportWarningRelateMapper;
@@ -16,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.Valid;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -158,5 +158,10 @@ public class WarningsController {
             throw new CrudException("操作码错误");
         }
 
+    }
+    @RequestMapping(value = "/getWarnList",method = RequestMethod.POST)
+    public EwsResult<IPage<WarningsVO>> getWarnList(@Valid @RequestBody QueryWarnDTO queryWarnDTO){
+        IPage<WarningsVO> warnInfo = warningsService.getWarnInfo(queryWarnDTO);
+        return EwsResult.OK(warnInfo);
     }
 }

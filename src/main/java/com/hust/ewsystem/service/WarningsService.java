@@ -1,10 +1,13 @@
 package com.hust.ewsystem.service;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.hust.ewsystem.DAO.DTO.DeviceDTO;
 import com.hust.ewsystem.DAO.DTO.QueryPvWarnMatrixDTO;
+import com.hust.ewsystem.DAO.DTO.QueryWarnDTO;
 import com.hust.ewsystem.DAO.DTO.QueryWarnDetailsDTO;
 import com.hust.ewsystem.DAO.PO.Warnings;
+import com.hust.ewsystem.DAO.VO.WarningsVO;
 import com.hust.ewsystem.common.result.EwsResult;
 
 import java.util.List;
@@ -21,4 +24,6 @@ public interface WarningsService extends IService<Warnings> {
     EwsResult<?> queryTurbineWarnMatrix(QueryPvWarnMatrixDTO queryPvWarnMatrixDTO);
 
     List<DeviceDTO> getDeviceByWarningIdList(List<Integer> warningId);
+
+    IPage<WarningsVO> getWarnInfo(QueryWarnDTO queryWarnDTO);
 }

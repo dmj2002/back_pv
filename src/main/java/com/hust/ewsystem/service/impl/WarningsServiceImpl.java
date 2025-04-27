@@ -2,11 +2,13 @@ package com.hust.ewsystem.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.hust.ewsystem.DAO.DTO.*;
 import com.hust.ewsystem.DAO.PO.*;
 import com.hust.ewsystem.DAO.VO.PvWarnMatrixVO;
+import com.hust.ewsystem.DAO.VO.WarningsVO;
 import com.hust.ewsystem.common.result.EwsResult;
 import com.hust.ewsystem.mapper.StandPointMapper;
 import com.hust.ewsystem.mapper.WarningsMapper;
@@ -239,6 +241,12 @@ public class WarningsServiceImpl extends ServiceImpl<WarningsMapper, Warnings> i
     @Override
     public List<DeviceDTO> getDeviceByWarningIdList(List<Integer> warningId) {
         return warningsMapper.getDeviceByWarningIdList(warningId);
+    }
+
+    @Override
+    public IPage<WarningsVO> getWarnInfo(QueryWarnDTO queryWarnDTO) {
+        Page<Warnings> page = new Page<>(queryWarnDTO.getPageNo(),queryWarnDTO.getPageSize());
+        return warningsMapper.selectWarningsPage(queryWarnDTO,page);
     }
 
     private int getWarnCount(Integer deviceId,Integer deviceType, QueryPvWarnMatrixDTO queryPvWarnMatrixDTO) {

@@ -7,6 +7,23 @@
         <collection property="points" ofType="com.hust.ewsystem.DAO.PO.StandPoint">
         </collection>
     </resultMap>
+    <resultMap id="WarningResultMap" type="com.hust.ewsystem.DAO.VO.WarningsVO">
+        <id column="warning_id" property="warningId"/>
+        <result column="warning_level" property="warningLevel"/>
+        <result column="warning_status" property="warningStatus"/>
+        <result column="start_time" property="startTime"/>
+        <result column="end_time" property="endTime"/>
+        <result column="handler_id" property="handlerId"/>
+        <result column="handle_time" property="handleTime"/>
+        <result column="warning_description" property="warningDescription"/>
+        <result column="transferred_to_work_order" property="transferredToWorkOrder"/>
+        <result column="model_id" property="modelId"/>
+        <result column="task_id" property="taskId"/>
+        <result column="valid" property="valid"/>
+        <result column="repetition" property="repetition"/>
+        <result column="device_id" property="deviceId"/>
+        <result column="model_type" property="deviceType"/>
+    </resultMap>
 
     <select id="getStandPointByWarningId" resultMap = "standPointMap">
         SELECT sp.*,m.model_type
@@ -55,5 +72,23 @@
         <if test="endTime != null">
             AND w.end_time &lt;= #{endTime}
         </if>
+    </select>
+
+    <select id="selectWarningsPage" resultMap="WarningResultMap">
+        SELECT w.*,m.device_id,m.model_type
+        FROM warnings w
+        JOIN models m ON w.model_id = m.model_id
+        <where>
+            <if test="param.pvFarmId != null">
+                wt.wind_farm_id = #{param.pvFarmId}
+            </if>
+            <if test="param.startTime != null">
+                AND w.start_time &gt;= #{param.startTime}
+            </if>
+            <if test="param.endTime != null">
+                AND w.end_time &lt;= #{param.endTime}
+            </if>
+        </where>
+        ORDER BY w.start_time DESC
     </select>
 </mapper>

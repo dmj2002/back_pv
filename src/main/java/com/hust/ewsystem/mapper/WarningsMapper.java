@@ -1,11 +1,15 @@
 package com.hust.ewsystem.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.hust.ewsystem.DAO.DTO.DeviceDTO;
 import com.hust.ewsystem.DAO.DTO.GetWarningsCountDTO;
+import com.hust.ewsystem.DAO.DTO.QueryWarnDTO;
 import com.hust.ewsystem.DAO.DTO.WarnStatusDTO;
 import com.hust.ewsystem.DAO.PO.Warnings;
 import com.hust.ewsystem.DAO.VO.StandPointVO;
+import com.hust.ewsystem.DAO.VO.WarningsVO;
 import org.apache.ibatis.annotations.Param;
 
 import javax.validation.constraints.NotNull;
@@ -22,4 +26,5 @@ public interface WarningsMapper extends BaseMapper<Warnings> {
 
     WarnStatusDTO getCount(@Param("modelId") Integer modelId, @Param("startTime")LocalDateTime startTime,@Param("endTime")LocalDateTime endTime);
 
+    IPage<WarningsVO> selectWarningsPage(@Param("param") QueryWarnDTO queryWarnDTO, @Param("page") Page<Warnings> page);
 }
