@@ -2,7 +2,7 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.hust.ewsystem.mapper.CommonDataMapper">
 
-    <select id="selectAllData" resultType="com.hust.ewsystem.entity.CommonData">
+    <select id="selectAllData" resultType="com.hust.ewsystem.DAO.PO.CommonData">
         SELECT * FROM ${tableName}
     </select>
 

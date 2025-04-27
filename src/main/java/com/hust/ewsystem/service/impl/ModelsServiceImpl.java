@@ -65,8 +65,6 @@ public class ModelsServiceImpl extends ServiceImpl<ModelsMapper, Models> impleme
 
     private final TasksMapper tasksMapper;
 
-    private final WarningsService warningService;
-
     private final AlgorithmsMapper algorithmsMapper;
 
     private final CombinerBoxService combinerBoxService;
@@ -74,6 +72,12 @@ public class ModelsServiceImpl extends ServiceImpl<ModelsMapper, Models> impleme
     private final BoxTransService boxTransService;
 
     private final InverterService inverterService;
+
+    private  WarningsService warningService;
+
+    public void setWarningsService(WarningsService warningsService) {
+        this.warningService = warningsService;
+    }
 
     // 任务状态
     private final Map<String, ScheduledFuture<?>> taskMap = new ConcurrentHashMap<>();
