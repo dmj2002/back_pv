@@ -73,7 +73,7 @@ public class ModelsServiceImpl extends ServiceImpl<ModelsMapper, Models> impleme
 
     private final InverterService inverterService;
 
-    private  WarningsService warningService;
+    private WarningsService warningService;
 
     public void setWarningsService(WarningsService warningsService) {
         this.warningService = warningsService;

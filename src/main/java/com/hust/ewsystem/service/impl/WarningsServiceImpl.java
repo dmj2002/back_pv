@@ -249,6 +249,17 @@ public class WarningsServiceImpl extends ServiceImpl<WarningsMapper, Warnings> i
         return warningsMapper.selectWarningsPage(queryWarnDTO,page);
     }
 
+    @Override
+    public List<WarningsVO> getWarnDesc(QueryWarnInfoDTO queryWarnInfoDTO) {
+        return warningsMapper.selectWarningsDesc(queryWarnInfoDTO);
+    }
+
+    @Override
+    public List<WarningsVO> getWarnInfo(QueryWarnInfoDTO queryWarnInfoDTO) {
+        List<WarningsVO> warnings = warningsMapper.selectWarningsNoPage(queryWarnInfoDTO);
+        return warnings;
+    }
+
     private int getWarnCount(Integer deviceId,Integer deviceType, QueryPvWarnMatrixDTO queryPvWarnMatrixDTO) {
         int warnCount = 0;
         LambdaQueryWrapper<Models> queryWrapper = new LambdaQueryWrapper<>();

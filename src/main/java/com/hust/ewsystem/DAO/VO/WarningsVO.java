@@ -76,6 +76,8 @@ public class WarningsVO implements Serializable {
 
     private Integer deviceType;
 
+    private Integer deviceName;
+
     /**
      * 是否有效，0否1是,
      */
