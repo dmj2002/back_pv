@@ -6,7 +6,7 @@
         SELECT * FROM ${tableName}
     </select>
 
-    <select id="selectDataByTime" resultMap="java.util.Map">
+    <select id="selectDataByTime" resultType="java.util.Map">
         SELECT
         datetime,
         <foreach collection="columns" item="column" separator=",">
