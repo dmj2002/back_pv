@@ -86,7 +86,6 @@ public class ModelsServiceImpl extends ServiceImpl<ModelsMapper, Models> impleme
 
     @Override
     public EwsResult<?> addModel(ModelAddDTO modelAddDTO) {
-        Algorithms a= algorithmsService.getById(modelAddDTO.getAlgorithmId());
         Integer algorithmType = algorithmsService.getById(modelAddDTO.getAlgorithmId()).getAlgorithmType();
         List<Models> modelsList = new ArrayList<>();
         for(Integer deviceId : modelAddDTO.getDeviceList()){
