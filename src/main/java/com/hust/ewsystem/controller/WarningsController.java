@@ -80,7 +80,7 @@ public class WarningsController {
     public EwsResult<?> getWarningTrendData(@RequestBody QueryWarnDetailsDTO queryWarnDetailsDTO){
         return warningsService.getWarningTrendData(queryWarnDetailsDTO);
     }
-    @RequestMapping(value = "/queryTurbineWarnMatrix",method = RequestMethod.POST)
+    @RequestMapping(value = "/queryDeviceWarnMatrix",method = RequestMethod.POST)
     public EwsResult<?> queryTurbineWarnMatrix(@RequestBody QueryPvWarnMatrixDTO queryPvWarnMatrixDTO){
         return warningsService.queryTurbineWarnMatrix(queryPvWarnMatrixDTO);
     }
