@@ -68,7 +68,7 @@ public class WarningsController {
     }
     @GetMapping("/nowList")
     public EwsResult<?> getWarningList(@RequestParam(value = "page") int page,
-                                       @RequestParam(value = "page_size") int pageSize,
+                                       @RequestParam(value = "pageSize") int pageSize,
                                        @RequestParam(value = "warningLevel", required = false) Integer warningLevel,
                                        @RequestParam(value = "companyId") Integer companyId,
                                        @RequestParam(value = "pvFarmId", required = false) Integer pvFarmId,
