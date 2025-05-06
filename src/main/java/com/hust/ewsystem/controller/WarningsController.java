@@ -56,7 +56,7 @@ public class WarningsController {
 
     @GetMapping("/list")
     public EwsResult<?> getWarningList(@RequestParam(value = "page") int page,
-                                       @RequestParam(value = "page_size") int pageSize,
+                                       @RequestParam(value = "pageSize") int pageSize,
                                        @RequestParam(value = "startDate") String startDate,
                                        @RequestParam(value = "endDate", required = false) String endDate,
                                        @RequestParam(value = "warningLevel", required = false) Integer warningLevel,
@@ -80,7 +80,7 @@ public class WarningsController {
     public EwsResult<?> getWarningTrendData(@RequestBody QueryWarnDetailsDTO queryWarnDetailsDTO){
         return warningsService.getWarningTrendData(queryWarnDetailsDTO);
     }
-    @RequestMapping(value = "/queryTurbineWarnMatrix",method = RequestMethod.POST)
+    @RequestMapping(value = "/queryDeviceWarnMatrix",method = RequestMethod.POST)
     public EwsResult<?> queryTurbineWarnMatrix(@RequestBody QueryPvWarnMatrixDTO queryPvWarnMatrixDTO){
         return warningsService.queryTurbineWarnMatrix(queryPvWarnMatrixDTO);
     }
