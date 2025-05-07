@@ -132,8 +132,24 @@ public class ModelsServiceImpl extends ServiceImpl<ModelsMapper, Models> impleme
             Integer pointType = standPointMapper.selectOne(new QueryWrapper<StandPoint>().eq("point_label", standPoint)).getPointType();
             // 遍历模型列表
             for (Models models : modelsList) {
+                Integer uniqueRealId = null;
+                if(pointType == 0){
+                    //获取电厂id
+                    if(models.getModelType() == 1){
+                        Integer boxId = combinerBoxService.getById(models.getDeviceId()).getBoxId();
+                        Integer pvFarmId = boxTransService.getById(boxId).getPvFarmId();
+                        uniqueRealId = findUniqueRealId(realPointIds, pvFarmId, pointType);
+                    }else if(models.getModelType() == 2){
+                        //获取逆变器id
+                        Integer boxId = inverterService.getById(models.getDeviceId()).getBoxId();
+                        Integer pvFarmId = boxTransService.getById(boxId).getPvFarmId();
+                        uniqueRealId = findUniqueRealId(realPointIds, pvFarmId, pointType);
+                    }
+                }
                 // 遍历每个真实测点 ID
-                Integer uniqueRealId = findUniqueRealId(realPointIds, models.getDeviceId(), pointType);
+                else{
+                    uniqueRealId = findUniqueRealId(realPointIds, models.getDeviceId(), pointType);
+                }
                 if (uniqueRealId == null) {
                     continue; // 如果找不到唯一的真实 ID，跳过
                 }
