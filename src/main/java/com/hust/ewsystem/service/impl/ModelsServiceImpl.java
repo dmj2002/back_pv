@@ -127,12 +127,13 @@ public class ModelsServiceImpl extends ServiceImpl<ModelsMapper, Models> impleme
         Map<String, List<Integer>> standToRealIdMap = standToRealId(standpointList);
         List<ModelRealRelate> modelRealRelateList = new ArrayList<>();
         for (String standPoint : standpointList) {
-            // 获取真实测点 ID 列表
+            // 获取真实测点ID列表
             List<Integer> realPointIds = standToRealIdMap.getOrDefault(standPoint, new ArrayList<>());
+            Integer pointType = standPointMapper.selectOne(new QueryWrapper<StandPoint>().eq("stand_point_label", standPoint)).getPointType();
             // 遍历模型列表
             for (Models models : modelsList) {
                 // 遍历每个真实测点 ID
-                Integer uniqueRealId = findUniqueRealId(realPointIds, models.getDeviceId(), models.getModelType());
+                Integer uniqueRealId = findUniqueRealId(realPointIds, models.getDeviceId(), pointType);
                 if (uniqueRealId == null) {
                     continue; // 如果找不到唯一的真实 ID，跳过
                 }
