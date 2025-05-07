@@ -129,7 +129,7 @@ public class ModelsServiceImpl extends ServiceImpl<ModelsMapper, Models> impleme
         for (String standPoint : standpointList) {
             // 获取真实测点ID列表
             List<Integer> realPointIds = standToRealIdMap.getOrDefault(standPoint, new ArrayList<>());
-            Integer pointType = standPointMapper.selectOne(new QueryWrapper<StandPoint>().eq("stand_point_label", standPoint)).getPointType();
+            Integer pointType = standPointMapper.selectOne(new QueryWrapper<StandPoint>().eq("point_label", standPoint)).getPointType();
             // 遍历模型列表
             for (Models models : modelsList) {
                 // 遍历每个真实测点 ID
