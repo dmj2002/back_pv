@@ -21,14 +21,14 @@
 
     <select id="getPvFarmsByCompanyId" resultMap="PvFarmWithTurbinesResultMap">
         SELECT
-        pf.pv_farm_id,
+        pf.id,
         pf.pv_farm_name,
         c.company_id,
         c.company_name,
         i.id as inverter_id,
         i.inverter_name,
         cb.id as combiner_box_id,
-        cb.combiner_box_name,
+        cb.combiner_box_name
         FROM pv_farm pf
         JOIN company c ON pf.company_id = c.company_id
         JOIN box_trans bt ON bt.pv_farm_id = pf.id
