@@ -129,7 +129,7 @@ public class ModelsServiceImpl extends ServiceImpl<ModelsMapper, Models> impleme
         for (String standPoint : standpointList) {
             // 获取真实测点ID列表
             List<Integer> realPointIds = standToRealIdMap.getOrDefault(standPoint, new ArrayList<>());
-            Integer pointType = standPointMapper.selectOne(new QueryWrapper<StandPoint>().eq("stand_point_label", standPoint)).getPointType();
+            Integer pointType = standPointMapper.selectOne(new QueryWrapper<StandPoint>().eq("point_label", standPoint)).getPointType();
             // 遍历模型列表
             for (Models models : modelsList) {
                 Integer uniqueRealId = null;
@@ -789,12 +789,16 @@ public class ModelsServiceImpl extends ServiceImpl<ModelsMapper, Models> impleme
     }
 
     private Integer findUniqueRealId(List<Integer> realPointIds, Integer deviceId, Integer modelType) {
-        return realPointMapper.selectOne(new QueryWrapper<RealPoint>()
+        RealPoint realPoint = realPointMapper.selectOne(new QueryWrapper<RealPoint>()
                 .in("point_id", realPointIds) // 在 realPointIds 中查找
                 .eq("device_id", deviceId) // 设备 ID 匹配
                 .eq("point_type", modelType) // 测点类型匹配
-        ).getPointId();
+        );
+
+        // 如果查询结果为空，返回 null，表示忽略该设备编码
+        return realPoint != null ? realPoint.getPointId() : null;
     }
+
 
     //标准测点标签 -> 真实测点IDs
     public Map<String, List<Integer>> standToRealId(List<String> standpointList) {
