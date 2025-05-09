@@ -5,8 +5,8 @@
 
 
     <resultMap id="PvFarmWithTurbinesResultMap" type="com.hust.ewsystem.DAO.DTO.PvFarmDTO">
-        <id property="PvFarmId" column="pv_farm_id"/>
-        <result property="PvFarmName" column="pv_farm_name"/>
+        <id property="pvFarmId" column="pv_farm_id"/>
+        <result property="pvFarmName" column="pv_farm_name"/>
         <result property="companyId" column="company_id"/>
         <result property="companyName" column="company_name"/>
         <collection property="inverterWaitDoneInfo" ofType="com.hust.ewsystem.DAO.DTO.InverterWaitDoneDTO">
@@ -21,7 +21,7 @@
 
     <select id="getPvFarmsByCompanyId" resultMap="PvFarmWithTurbinesResultMap">
         SELECT
-        pf.id,
+        pf.id as pv_farm_id,
         pf.pv_farm_name,
         c.company_id,
         c.company_name,
