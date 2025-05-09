@@ -110,7 +110,7 @@ public class ModelsServiceImpl extends ServiceImpl<ModelsMapper, Models> impleme
         }
         for (Models models : modelsList) {
             //插入后才有modelId
-            String modelLabel = "M" + String.format("%04d", models.getModelId());
+            String modelLabel = "M" + String.format("%06d", models.getModelId());
             models.setModelLabel(modelLabel);
             File modelDir = new File(String.format("%s/%s", pythonFilePath, modelLabel));
             if (!modelDir.exists()) {
@@ -226,7 +226,7 @@ public class ModelsServiceImpl extends ServiceImpl<ModelsMapper, Models> impleme
         }
         modelIdList.forEach(modelId -> {
             //删除模型文件夹
-            String modelLabel = "M" + String.format("%04d", modelId);
+            String modelLabel = "M" + String.format("%06d", modelId);
             File modelDir = new File(String.format("%s/%s", pythonFilePath, modelLabel));
             if (modelDir.exists()) {
                 deleteDirectory(modelDir);

@@ -265,6 +265,10 @@ public class WarningsServiceImpl extends ServiceImpl<WarningsMapper, Warnings> i
         LambdaQueryWrapper<Models> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(Models::getDeviceId, deviceId).eq(Models::getModelType, deviceType);
         List<Integer> modelIds = modelsService.list(queryWrapper).stream().map(Models::getModelId).collect(Collectors.toList());
+        if(CollectionUtils.isEmpty(modelIds)){
+            LOGGER.error(String.format("设备id【%d】,设备类型【%d】,查询模型为空",deviceId,deviceType));
+            return warnCount;
+        }
         LambdaQueryWrapper<Warnings> warningsWrapper = new LambdaQueryWrapper<>();
         warningsWrapper.in(Warnings::getModelId,modelIds)
                 .ge(Warnings::getStartTime,queryPvWarnMatrixDTO.getStartDate()).le(Warnings::getEndTime,queryPvWarnMatrixDTO.getEndDate());
