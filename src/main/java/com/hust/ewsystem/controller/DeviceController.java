@@ -57,6 +57,7 @@ public class DeviceController {
                         innerDeviceInfo.setCombinerBoxList(combinerBoxes);
                         innerDeviceInfoList.add(innerDeviceInfo);
                     }
+                    deviceGetVO.setInnerDeviceInfoList(innerDeviceInfoList);
                     deviceGetVOList.add(deviceGetVO);
                 }
                 return EwsResult.OK("查询成功",deviceGetVOList);
@@ -72,8 +73,10 @@ public class DeviceController {
                         innerDeviceInfo.setInverter(inverter);
                         innerDeviceInfoList.add(innerDeviceInfo);
                     }
+                    deviceGetVO.setInnerDeviceInfoList(innerDeviceInfoList);
                     deviceGetVOList.add(deviceGetVO);
                 }
+                return EwsResult.OK("查询成功",deviceGetVOList);
             default:
                 return EwsResult.error("不支持的电站类型");
         }
