@@ -33,7 +33,7 @@
         JOIN company c ON pf.company_id = c.company_id
         JOIN box_trans bt ON bt.pv_farm_id = pf.id
         JOIN inverter i ON i.box_id = bt.id
-        JOIN combiner_box cb ON cb.box_id = bt.id and cb.inverter_id = i.id
+        LEFT JOIN combiner_box cb ON cb.box_id = bt.id and cb.inverter_id = i.id
         WHERE pf.company_id = #{param.companyId};
 
     </select>
