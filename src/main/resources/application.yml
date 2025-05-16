@@ -1,6 +1,6 @@
 # 应用服务 WEB 访问端口
 server:
-  port: 8080
+  port: 8082
   tomcat:
     uri-encoding: UTF-8
   ssl:
@@ -50,7 +50,7 @@ mybatis-plus:
 
 # Python 脚本位置
 algorithm:
-  pythonFilePath: C:/data
+  pythonFilePath: C:/pvdata
   threshold: 0.95
 logging:
   level:
