@@ -258,11 +258,11 @@ public class ModelsServiceImpl extends ServiceImpl<ModelsMapper, Models> impleme
             ).stream().map(ModelRealRelate::getRealPointId).collect(Collectors.toList());
             //标准测点标签 -> 真实测点
             RealToStandMapping realToStandMapping = RealToStandLabel(realpointId);
-            Map<Integer, List<String>> columnMapping = new HashMap<>();
+            Map<Integer, List<RealPoint>> columnMapping = new HashMap<>();
             for(RealPoint realPoint: realToStandMapping.getRealToStandPointMap().values()){
                 Integer type = realPoint.getPointType();
                 columnMapping.putIfAbsent(type, new ArrayList<>());
-                columnMapping.get(type).add(realPoint.getPointLabel());
+                columnMapping.get(type).add(realPoint);
             }
             //真实测点标签到标准测点标签
             Map<String, String> realLabelToStandLabelMap = realToStandMapping.getRealLabelToStandLabelMap();
@@ -271,11 +271,12 @@ public class ModelsServiceImpl extends ServiceImpl<ModelsMapper, Models> impleme
             for (Map<String, Object> period : timePeriods) {
                 String startTime = (String) period.get("startTime");
                 String endTime = (String) period.get("endTime");
-                for(Map.Entry<Integer, List<String>> entry : columnMapping.entrySet()){
+                for(Map.Entry<Integer, List<RealPoint>> entry : columnMapping.entrySet()){
                     Integer type = entry.getKey();
-                    List<String> pointLabels = entry.getValue();
-                    String tableName = getTableName(type) + "_" + deviceId;
-                    List<Map<String ,Object>> data = commonDataService.selectDataByTime(tableName, pointLabels, startTime, endTime);
+                    List<RealPoint> point = entry.getValue();
+                    // 获取表名
+                    String tableName = getTableName(type) + "_" + getdivceName(type,point);
+                    List<Map<String ,Object>> data = commonDataService.selectDataByTime(tableName, point.stream().map(RealPoint::getPointLabel).collect(Collectors.toList()),startTime, endTime);
                     for (Map<String ,Object> record : data) {
                         LocalDateTime datetime = (LocalDateTime) record.get("datetime");
                         for(Map.Entry<String, Object> recordEntry : record.entrySet()){
@@ -516,11 +517,11 @@ public class ModelsServiceImpl extends ServiceImpl<ModelsMapper, Models> impleme
                     new QueryWrapper<ModelRealRelate>().eq("model_id", modelId)
             ).stream().map(ModelRealRelate::getRealPointId).collect(Collectors.toList());
             RealToStandMapping realToStandMapping = RealToStandLabel(realpointId);
-            Map<Integer, List<String>> columnMapping = new HashMap<>();
+            Map<Integer, List<RealPoint>> columnMapping = new HashMap<>();
             for(RealPoint realPoint: realToStandMapping.getRealToStandPointMap().values()){
                 Integer type = realPoint.getPointType();
                 columnMapping.putIfAbsent(type, new ArrayList<>());
-                columnMapping.get(type).add(realPoint.getPointLabel());
+                columnMapping.get(type).add(realPoint);
             }
             //真实测点标签到标准测点标签
             Map<String, String> realLabelToStandLabelMap = realToStandMapping.getRealLabelToStandLabelMap();
@@ -536,11 +537,11 @@ public class ModelsServiceImpl extends ServiceImpl<ModelsMapper, Models> impleme
             // 将 LocalDateTime 转换为 String 格式
             String startTimeStr = startTime.format(formatter);
             String endTimeStr = endTime.format(formatter);
-            for(Map.Entry<Integer, List<String>> entry : columnMapping.entrySet()){
+            for(Map.Entry<Integer, List<RealPoint>> entry : columnMapping.entrySet()){
                 Integer type = entry.getKey();
-                List<String> pointLabels = entry.getValue();
-                String tableName = getTableName(type) + "_" + deviceId;
-                List<Map<String ,Object>> data = commonDataService.selectDataByTime(tableName, pointLabels, startTimeStr, endTimeStr);
+                List<RealPoint> point = entry.getValue();
+                String tableName = getTableName(type) + "_" + getdivceName(type,point);
+                List<Map<String ,Object>> data = commonDataService.selectDataByTime(tableName, point.stream().map(RealPoint::getPointLabel).collect(Collectors.toList()), startTimeStr, endTimeStr);
                 for (Map<String ,Object> record : data) {
                     LocalDateTime datetime = (LocalDateTime) record.get("datetime");
                     for(Map.Entry<String, Object> recordEntry : record.entrySet()){
@@ -860,6 +861,14 @@ public class ModelsServiceImpl extends ServiceImpl<ModelsMapper, Models> impleme
                 return "inverter";
             default:
                 return "default_table";  // 如果type不匹配任何值，返回默认表名
+        }
+    }
+
+    public static String getdivceName(Integer type, List<RealPoint> point) {
+        if(type == 0){
+            return String.valueOf(point.get(0).getPvFarmId());
+        }else{
+            return String.valueOf(point.get(0).getDeviceId());
         }
     }
     public void toTrainCsv(Map<LocalDateTime, Map<String, Object>> alignedData,Map<String, String> realToStandLabel,String modelLabel){
