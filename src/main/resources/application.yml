@@ -55,7 +55,9 @@ algorithm:
 logging:
   level:
     com.hust.encrypt: info
-
+admin:
+  username: admin
+  password: hust411
 
 # Redis 单节点配置（如果需要，可以解开注释）
 # redis:
