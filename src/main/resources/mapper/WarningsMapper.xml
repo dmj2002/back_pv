@@ -139,7 +139,7 @@
             </if>
             AND w.warning_status != 4
         </where>
-        GROUP BY w.warning_description
+        GROUP BY w.warning_description, m.model_type, m.device_id
     </select>
 
     <select id="selectWarningsNoPage" resultMap="WarningResultMap">
