@@ -96,7 +96,7 @@
         OR
         (m.model_type = 2 AND m.device_id IN
             (SELECT i.id
-            FROM inverters i
+            FROM inverter i
             WHERE i.box_id IN
                 (SELECT bt.id
                 FROM box_trans bt
@@ -119,7 +119,7 @@
             CASE
             WHEN m.model_type = 0 THEN (SELECT pf.pv_farm_name FROM pv_farm pf WHERE pf.id = m.device_id)
             WHEN m.model_type = 1 THEN (SELECT cb.combiner_box_name FROM combiner_box cb WHERE cb.id = m.device_id)
-            WHEN m.model_type = 2 THEN (SELECT i.inverter_name FROM inverters i WHERE i.id = m.device_id)
+            WHEN m.model_type = 2 THEN (SELECT i.inverter_name FROM inverter i WHERE i.id = m.device_id)
             ELSE NULL
             END AS device_name
         FROM warnings w
@@ -148,7 +148,7 @@
             CASE
             WHEN m.model_type = 0 THEN (SELECT pf.pv_farm_name FROM pv_farm pf WHERE pf.id = m.device_id)
             WHEN m.model_type = 1 THEN (SELECT cb.combiner_box_name FROM combiner_box cb WHERE cb.id = m.device_id)
-            WHEN m.model_type = 2 THEN (SELECT i.inverter_name FROM inverters i WHERE i.id = m.device_id)
+            WHEN m.model_type = 2 THEN (SELECT i.inverter_name FROM inverter i WHERE i.id = m.device_id)
             ELSE NULL
             END AS device_name
         FROM warnings w
