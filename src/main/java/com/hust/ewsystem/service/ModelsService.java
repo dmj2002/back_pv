@@ -28,4 +28,6 @@ public interface ModelsService extends IService<Models> {
     EwsResult<?> showThreshold(Integer modelId);
 
     EwsResult<?> changeThreshold(ThresholdDTO thresholdDTO);
+
+    EwsResult<?> testModel(Map<String, Object> fileForm);
 }

@@ -1,5 +1,6 @@
 package com.hust.ewsystem.controller;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.hust.ewsystem.DAO.DTO.ModelAddDTO;
 import com.hust.ewsystem.DAO.DTO.ModelChangeDTO;
 import com.hust.ewsystem.DAO.DTO.ThresholdDTO;
@@ -49,6 +50,11 @@ public class ModelsController {
     @PostMapping("/predict")
     public EwsResult<?> predictModel(@RequestBody List<Integer> modelList) {
         return modelsService.predictModel(modelList);
+    }
+
+    @PostMapping("/test")
+    public EwsResult<?> testModel(@RequestBody Map<String, Object> FileForm){
+        return modelsService.testModel(FileForm);
     }
 
     @PostMapping("/stopPredict")

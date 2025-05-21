@@ -309,6 +309,10 @@ public class ModelsServiceImpl extends ServiceImpl<ModelsMapper, Models> impleme
 
     @Override
     public EwsResult<?> predictModel(List<Integer> modelList) {
+        if(modelList.get(0) == 0){
+            //如果传入的modelId是0，表示所有模型都要预测
+            modelList = list(new QueryWrapper<Models>().select("model_id")).stream().map(Models::getModelId).collect(Collectors.toList());
+        }
         for(Integer modelId : modelList) {
             //获取返回值
             Models model = getById(modelId);
@@ -485,10 +489,123 @@ public class ModelsServiceImpl extends ServiceImpl<ModelsMapper, Models> impleme
         return EwsResult.OK("修改阈值成功");
     }
 
+    @Override
+    public EwsResult<?> testModel(Map<String, Object> fileForm) {
+        Integer modelId = (Integer) fileForm.get("modelId");
+        String startTime = (String)fileForm.get("startTime");
+        String endTime = (String)fileForm.get("endTime");
+        //删除对应时间段的所有预警重新生成
+        warningService.remove(new QueryWrapper<Warnings>().eq("model_id", modelId).ge("start_time", startTime).le("end_time", endTime));
+        //获取返回值
+        Models model = getById(modelId);
+        Integer alertInterval = model.getAlertInterval();
+        String modelLabel = model.getModelLabel();
+        Integer algorithmId = model.getAlgorithmId();
+        Integer alertWindowSize = model.getAlertWindowSize();
+        String algorithmLabel = algorithmsMapper.selectById(algorithmId).getAlgorithmLabel();
+        //算法调用
+        testPredict(alertInterval, modelLabel, algorithmLabel, modelId,alertWindowSize, startTime,endTime);
+        return EwsResult.OK("模型开始测试");
+    }
+
+    private void testPredict(Integer alertInterval, String modelLabel, String algorithmLabel, Integer modelId, Integer alertWindowSize,String startTime, String endTime) {
+        Runnable task = () ->{
+            try {
+                String taskLabel = UUID.randomUUID().toString();
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+                LocalDateTime startTimeDate = LocalDateTime.parse(startTime, formatter);
+                LocalDateTime endTimeDate = LocalDateTime.parse(endTime, formatter);
+                Tasks newtask = new Tasks();
+                newtask.setModelId(modelId)
+                        .setTaskType(1)
+                        .setTaskLabel(taskLabel)
+                        .setStartTime(startTimeDate)
+                        .setEndTime(endTimeDate);
+                tasksMapper.insert(newtask);
+                Integer taskId= newtask.getTaskId();
+                File taskDir = new File(pythonFilePath + "/task_logs/" + taskLabel);
+                if (!taskDir.exists()) {
+                    if (!taskDir.mkdirs()) {
+                        throw new FileException("创建任务目录失败");
+                    }
+                }
+                //准备setting.json
+                File settingFile = new File(taskDir, "setting.json");
+                JSONObject settings = new JSONObject();
+                settings.put("modelPath", pythonFilePath + "/" + modelLabel);
+                settings.put("trainDataPath", pythonFilePath + "/" + modelLabel + "/train.csv");
+                settings.put("predictDataPath", pythonFilePath + "/task_logs/" + taskLabel + "/predict.csv");
+                settings.put("resultDataPath", pythonFilePath + "/task_logs/" + taskLabel + "/result.json");
+                settings.put("logPath", pythonFilePath + "/task_logs/" + taskLabel + "/" + taskLabel + ".log");
+                // 写入 setting.json 文件
+                try (FileWriter fileWriter = new FileWriter(settingFile)) {
+                    fileWriter.write(settings.toJSONString());
+                } catch (IOException e) {
+                    throw new FileException("setting.json文件配置失败",e);
+                }
+                List<Integer> realpointId = modelRealRelateService.list(
+                        new QueryWrapper<ModelRealRelate>().eq("model_id", modelId)
+                ).stream().map(ModelRealRelate::getRealPointId).collect(Collectors.toList());
+                RealToStandMapping realToStandMapping = RealToStandLabel(realpointId);
+                Map<Integer, List<RealPoint>> columnMapping = new HashMap<>();
+                for(RealPoint realPoint: realToStandMapping.getRealToStandPointMap().values()){
+                    Integer type = realPoint.getPointType();
+                    columnMapping.putIfAbsent(type, new ArrayList<>());
+                    columnMapping.get(type).add(realPoint);
+                }
+                //真实测点标签到标准测点标签
+                Map<String, String> realLabelToStandLabelMap = realToStandMapping.getRealLabelToStandLabelMap();
+                Map<LocalDateTime, Map<String, Object>> alignedData = new TreeMap<>();
+
+                while (startTimeDate.isBefore(endTimeDate)) {
+                    LocalDateTime windowEndTime = startTimeDate.plusSeconds(alertWindowSize);
+                    if (windowEndTime.isAfter(endTimeDate)) {
+                        System.out.println("窗口数据不足,当前预测任务取消");
+                        break;
+                    }
+                    alignedData.clear();
+                    String startTimeStr = startTimeDate.format(formatter);
+                    String windowEndTimeStr = windowEndTime.format(formatter);
+
+                    for(Map.Entry<Integer, List<RealPoint>> entry : columnMapping.entrySet()){
+                        Integer type = entry.getKey();
+                        List<RealPoint> point = entry.getValue();
+                        String tableName = getTableName(type) + "_" + getdivceName(type,point);
+                        List<Map<String ,Object>> data = commonDataService.selectDataByTime(tableName, point.stream().map(RealPoint::getPointLabel).collect(Collectors.toList()), startTimeStr, windowEndTimeStr);
+                        for (Map<String ,Object> record : data) {
+                            LocalDateTime datetime = ((Timestamp) record.get("datetime")).toLocalDateTime();
+                            for(Map.Entry<String, Object> recordEntry : record.entrySet()){
+                                String pointLabel = recordEntry.getKey();
+                                if(pointLabel.equals("datetime"))continue;
+                                // 真实测点标签 -> 标准测点标签
+                                String standPointLabel = realLabelToStandLabelMap.get(pointLabel);
+                                Double value = Double.valueOf(recordEntry.getValue().toString());
+                                // 将数据存储到 alignedData 中
+                                alignedData.computeIfAbsent(datetime, k -> new HashMap<>()).put(standPointLabel, value);
+                            }
+                        }
+                    }
+                    boolean res = toPredictCsv(alignedData, realLabelToStandLabelMap, taskLabel);
+                    if(!res) {
+                        LOGGER.info("数据有异常，取消此次预测任务");
+                        startTimeDate = startTimeDate.plusSeconds(alertInterval);
+                        continue;
+                    }
+                    executePredict(pythonFilePath, algorithmLabel, taskLabel, modelId, taskId);
+                    startTimeDate = startTimeDate.plusSeconds(alertInterval);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        };
+        // 定期调度任务
+        ScheduledFuture<?> scheduledTask =scheduler.schedule(task, 0, TimeUnit.SECONDS);
+    }
+
     private void predict(Integer alertInterval, String modelLabel, String algorithmLabel, Integer modelId, Integer alertWindowSize,Integer deviceId) {
         Runnable task = () ->{
             try {
-                prePredict(modelId,modelLabel,algorithmLabel,alertWindowSize,deviceId);
+                prePredict(modelId,modelLabel,algorithmLabel,alertWindowSize);
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -498,7 +615,7 @@ public class ModelsServiceImpl extends ServiceImpl<ModelsMapper, Models> impleme
         taskMap.put(modelLabel + "_predict", scheduledTask);
     }
 
-    private void prePredict(Integer modelId, String modelLabel, String algorithmLabel, Integer alertWindowSize,Integer deviceId) {
+    private void prePredict(Integer modelId, String modelLabel, String algorithmLabel, Integer alertWindowSize) {
         try {
             String taskLabel = UUID.randomUUID().toString();
             Tasks newtask = new Tasks();
@@ -901,7 +1018,7 @@ public class ModelsServiceImpl extends ServiceImpl<ModelsMapper, Models> impleme
             throw new FileException("写入CSV文件失败", e);
         }
     }
-    private void toPredictCsv(Map<LocalDateTime, Map<String, Object>> alignedData, Map<String, String> realLabelToStandLabelMap, String taskLabel) {
+    private boolean toPredictCsv(Map<LocalDateTime, Map<String, Object>> alignedData, Map<String, String> realLabelToStandLabelMap, String taskLabel) {
         // 创建目标目录（如果不存在）
         File modelDir = new File(String.format("%s/task_logs/%s", pythonFilePath,taskLabel));
         if (!modelDir.exists()) {
@@ -926,8 +1043,10 @@ public class ModelsServiceImpl extends ServiceImpl<ModelsMapper, Models> impleme
                 }
                 csvWriter.append(line.toString()).append("\n");
             }
+            return true;
         } catch (IOException e) {
-            throw new FileException("写入CSV文件失败", e);
+            LOGGER.error("写入 CSV 文件失败", e);
+            return false;
         }
     }
     private void deleteDirectory(File dir) {
