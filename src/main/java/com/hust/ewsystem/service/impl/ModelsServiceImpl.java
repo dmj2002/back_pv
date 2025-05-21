@@ -34,6 +34,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -278,7 +279,7 @@ public class ModelsServiceImpl extends ServiceImpl<ModelsMapper, Models> impleme
                     String tableName = getTableName(type) + "_" + getdivceName(type,point);
                     List<Map<String ,Object>> data = commonDataService.selectDataByTime(tableName, point.stream().map(RealPoint::getPointLabel).collect(Collectors.toList()),startTime, endTime);
                     for (Map<String ,Object> record : data) {
-                        LocalDateTime datetime = (LocalDateTime) record.get("datetime");
+                        LocalDateTime datetime = ((Timestamp) record.get("datetime")).toLocalDateTime();
                         for(Map.Entry<String, Object> recordEntry : record.entrySet()){
                             String pointLabel = recordEntry.getKey();
                             if(pointLabel.equals("datetime"))continue;
@@ -543,7 +544,7 @@ public class ModelsServiceImpl extends ServiceImpl<ModelsMapper, Models> impleme
                 String tableName = getTableName(type) + "_" + getdivceName(type,point);
                 List<Map<String ,Object>> data = commonDataService.selectDataByTime(tableName, point.stream().map(RealPoint::getPointLabel).collect(Collectors.toList()), startTimeStr, endTimeStr);
                 for (Map<String ,Object> record : data) {
-                    LocalDateTime datetime = (LocalDateTime) record.get("datetime");
+                    LocalDateTime datetime = ((Timestamp) record.get("datetime")).toLocalDateTime();
                     for(Map.Entry<String, Object> recordEntry : record.entrySet()){
                         String pointLabel = recordEntry.getKey();
                         if(pointLabel.equals("datetime"))continue;
