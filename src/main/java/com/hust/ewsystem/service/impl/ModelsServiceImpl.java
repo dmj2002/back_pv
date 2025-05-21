@@ -285,7 +285,7 @@ public class ModelsServiceImpl extends ServiceImpl<ModelsMapper, Models> impleme
                             if(pointLabel.equals("datetime"))continue;
                             // 真实测点标签 -> 标准测点标签
                             String standPointLabel = realLabelToStandLabelMap.get(pointLabel);
-                            Double value = (Double)recordEntry.getValue();
+                            Double value = Double.valueOf(recordEntry.getValue().toString());
                             // 将数据存储到 alignedData 中
                             alignedData.computeIfAbsent(datetime, k -> new HashMap<>()).put(standPointLabel, value);
                         }
@@ -550,7 +550,7 @@ public class ModelsServiceImpl extends ServiceImpl<ModelsMapper, Models> impleme
                         if(pointLabel.equals("datetime"))continue;
                         // 真实测点标签 -> 标准测点标签
                         String standPointLabel = realLabelToStandLabelMap.get(pointLabel);
-                        Double value = (Double)recordEntry.getValue();
+                        Double value = Double.valueOf(recordEntry.getValue().toString());
                         // 将数据存储到 alignedData 中
                         alignedData.computeIfAbsent(datetime, k -> new HashMap<>()).put(standPointLabel, value);
                     }
