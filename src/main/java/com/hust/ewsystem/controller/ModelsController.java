@@ -3,19 +3,11 @@ package com.hust.ewsystem.controller;
 import com.hust.ewsystem.DAO.DTO.ModelAddDTO;
 import com.hust.ewsystem.DAO.DTO.ModelChangeDTO;
 import com.hust.ewsystem.DAO.DTO.ThresholdDTO;
-import com.hust.ewsystem.DAO.PO.Models;
-import com.hust.ewsystem.DAO.VO.ThresholdVO;
 import com.hust.ewsystem.common.result.EwsResult;
-import com.hust.ewsystem.service.CombinerBoxService;
-import com.hust.ewsystem.service.InverterService;
 import com.hust.ewsystem.service.ModelsService;
-import com.hust.ewsystem.service.PvFarmService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -49,6 +41,11 @@ public class ModelsController {
     @PostMapping("/predict")
     public EwsResult<?> predictModel(@RequestBody List<Integer> modelList) {
         return modelsService.predictModel(modelList);
+    }
+
+    @PostMapping("/test")
+    public EwsResult<?> testModel(@RequestBody Map<String, Object> FileForm){
+        return modelsService.testModel(FileForm);
     }
 
     @PostMapping("/stopPredict")

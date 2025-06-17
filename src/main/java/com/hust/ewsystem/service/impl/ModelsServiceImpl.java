@@ -4,6 +4,8 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
+import com.alibaba.fastjson.serializer.SerializeConfig;
+import com.alibaba.fastjson.serializer.SerializerFeature;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
@@ -14,7 +16,6 @@ import com.hust.ewsystem.DAO.DTO.ModelChangeDTO;
 import com.hust.ewsystem.DAO.DTO.RealToStandMapping;
 import com.hust.ewsystem.DAO.DTO.ThresholdDTO;
 import com.hust.ewsystem.DAO.PO.*;
-import com.hust.ewsystem.DAO.VO.ThresholdVO;
 import com.hust.ewsystem.common.exception.CrudException;
 import com.hust.ewsystem.common.exception.FileException;
 import com.hust.ewsystem.common.result.EwsResult;
@@ -309,6 +310,10 @@ public class ModelsServiceImpl extends ServiceImpl<ModelsMapper, Models> impleme
 
     @Override
     public EwsResult<?> predictModel(List<Integer> modelList) {
+        if(modelList.get(0) == 0){
+            //如果传入的modelId是0，表示所有模型都要预测
+            modelList = list(new QueryWrapper<Models>().select("model_id")).stream().map(Models::getModelId).collect(Collectors.toList());
+        }
         for(Integer modelId : modelList) {
             //获取返回值
             Models model = getById(modelId);
@@ -425,8 +430,9 @@ public class ModelsServiceImpl extends ServiceImpl<ModelsMapper, Models> impleme
 
     @Override
     public EwsResult<?> showThreshold(Integer modelId) {
-        String modelLabel = getById(modelId).getModelLabel();
-        List<ThresholdVO> res = new ArrayList<>();
+        Models model = getById(modelId);
+        String modelLabel = model.getModelLabel();
+        Integer algorithmId = model.getAlgorithmId();
         try {
             String resultFilePath = pythonFilePath + "/" + modelLabel + "/model.json";
             // 强制使用 UTF-8 编码读取文件内容
@@ -443,8 +449,12 @@ public class ModelsServiceImpl extends ServiceImpl<ModelsMapper, Models> impleme
                 // 预处理：将 NaN 替换为 null
                 content = content.replace("NaN","null");
                 // 解析 JSON 内容
-                res = JSON.parseObject(content, new TypeReference<List<ThresholdVO>>() {});
-                return EwsResult.OK("获取阈值成功", res);
+                List<Map<String, Object>> list = JSON.parseObject(content, new TypeReference<List<Map<String, Object>>>() {});
+                for (Map<String, Object> map : list) {
+                    if (algorithmId.equals(map.get("id"))) {
+                        return EwsResult.OK("获取阈值成功", map);
+                    }
+                }
             }
             else{
                 System.out.println("文件不存在: " + resultFilePath);
@@ -459,36 +469,185 @@ public class ModelsServiceImpl extends ServiceImpl<ModelsMapper, Models> impleme
     @Override
     public EwsResult<?> changeThreshold(ThresholdDTO thresholdDTO) {
         Integer modelId = thresholdDTO.getModelId();
-        String modelLabel = getById(modelId).getModelLabel();
-        List<ThresholdVO> items = thresholdDTO.getItems();
-        File resultFile = new File(pythonFilePath + "/" + modelLabel + "/model.json");
-        // 尝试创建文件或覆盖已有文件
+        Models model = getById(modelId);
+        String modelLabel = model.getModelLabel();
+        Integer algorithmId = model.getAlgorithmId();
+        Object items = thresholdDTO.getItems();
         try {
-            if (resultFile.exists()) {
-                boolean deleted = resultFile.delete();
-                if (!deleted) {
-                    return EwsResult.error("修改阈值失败"); // 如果无法删除文件，结束方法
+            String resultFilePath = pythonFilePath + "/" + modelLabel + "/model.json";
+            Path path = Paths.get(resultFilePath);
+            // 检查文件是否存在
+            if (!Files.exists(path)) {
+                System.out.println("文件不存在: " + resultFilePath);
+            }
+            // 读取文件内容
+            StringBuilder contentBuilder = new StringBuilder();
+            try (BufferedReader reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    contentBuilder.append(line);
                 }
             }
-            // 创建新文件
-            boolean fileCreated = resultFile.createNewFile();
-            if (fileCreated) {
-                System.out.println("文件创建成功: " + resultFile.getAbsolutePath());
-                //写入结果到文件
-                writeFileContent(resultFile.getAbsoluteFile(), items);
-            } else {
-                return EwsResult.error("修改阈值失败");
+            String content = contentBuilder.toString().replace("NaN", "null");
+            List<Map<String, Object>> list = JSON.parseObject(content, new TypeReference<List<Map<String, Object>>>() {});
+            // 检查 items 是否为 List 类型
+            if (!(items instanceof List)) {
+                System.out.println("items 不是一个有效的 List 对象");
             }
-        } catch (IOException e) {
+            List<Map<String, Object>> itemList = (List<Map<String, Object>>) items;
+            // 遍历 list，找到匹配的 id
+            boolean updated = false;
+            for (Map<String, Object> map : list) {
+                // 检查 id 是否匹配
+                if (algorithmId != null && algorithmId.equals(map.get("id"))) {
+                    // 找到匹配的 id，更新字段
+                    for (Map<String, Object> item : itemList) {
+                        for (Map.Entry<String, Object> entry : item.entrySet()) {
+                            String key = entry.getKey();
+                            Object value = entry.getValue();
+                            // 直接更新字段值，禁止引入引用
+                            map.put(key, value);
+                        }
+                    }
+                    updated = true;
+                    break; // 更新完成后退出循环
+                }
+            }
+            if (!updated) {
+                System.out.println("未找到匹配的 id: " + algorithmId);
+            } else {
+                // 将修改后的内容写回文件
+                try (BufferedWriter writer = Files.newBufferedWriter(path, StandardCharsets.UTF_8)) {
+                    // 全局禁用引用生成
+                    SerializeConfig config = new SerializeConfig();
+                    config.setAsmEnable(false); // 禁用 ASM 优化
+                    String jsonString = JSON.toJSONString(list, config, SerializerFeature.DisableCircularReferenceDetect);
+                    writer.write(jsonString);
+                }
+            }
+        } catch (Exception e) {
             e.printStackTrace();
         }
-        return EwsResult.OK("修改阈值成功");
+        return EwsResult.OK("阈值修改成功");
+    }
+
+    @Override
+    public EwsResult<?> testModel(Map<String, Object> fileForm) {
+        Integer modelId = (Integer) fileForm.get("modelId");
+        String startTime = (String)fileForm.get("startTime");
+        String endTime = (String)fileForm.get("endTime");
+        //删除对应时间段的所有预警重新生成
+        warningService.remove(new QueryWrapper<Warnings>().eq("model_id", modelId).ge("start_time", startTime).le("end_time", endTime));
+        //获取返回值
+        Models model = getById(modelId);
+        Integer alertInterval = model.getAlertInterval();
+        String modelLabel = model.getModelLabel();
+        Integer algorithmId = model.getAlgorithmId();
+        Integer alertWindowSize = model.getAlertWindowSize();
+        String algorithmLabel = algorithmsMapper.selectById(algorithmId).getAlgorithmLabel();
+        //算法调用
+        testPredict(alertInterval, modelLabel, algorithmLabel, modelId,alertWindowSize, startTime,endTime);
+        return EwsResult.OK("模型开始测试");
+    }
+
+    private void testPredict(Integer alertInterval, String modelLabel, String algorithmLabel, Integer modelId, Integer alertWindowSize,String startTime, String endTime) {
+        Runnable task = () ->{
+            try {
+                String taskLabel = UUID.randomUUID().toString();
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+                LocalDateTime startTimeDate = LocalDateTime.parse(startTime, formatter);
+                LocalDateTime endTimeDate = LocalDateTime.parse(endTime, formatter);
+                Tasks newtask = new Tasks();
+                newtask.setModelId(modelId)
+                        .setTaskType(1)
+                        .setTaskLabel(taskLabel)
+                        .setStartTime(startTimeDate)
+                        .setEndTime(endTimeDate);
+                tasksMapper.insert(newtask);
+                Integer taskId= newtask.getTaskId();
+                File taskDir = new File(pythonFilePath + "/task_logs/" + taskLabel);
+                if (!taskDir.exists()) {
+                    if (!taskDir.mkdirs()) {
+                        throw new FileException("创建任务目录失败");
+                    }
+                }
+                //准备setting.json
+                File settingFile = new File(taskDir, "setting.json");
+                JSONObject settings = new JSONObject();
+                settings.put("modelPath", pythonFilePath + "/" + modelLabel);
+                settings.put("trainDataPath", pythonFilePath + "/" + modelLabel + "/train.csv");
+                settings.put("predictDataPath", pythonFilePath + "/task_logs/" + taskLabel + "/predict.csv");
+                settings.put("resultDataPath", pythonFilePath + "/task_logs/" + taskLabel + "/result.json");
+                settings.put("logPath", pythonFilePath + "/task_logs/" + taskLabel + "/" + taskLabel + ".log");
+                // 写入 setting.json 文件
+                try (FileWriter fileWriter = new FileWriter(settingFile)) {
+                    fileWriter.write(settings.toJSONString());
+                } catch (IOException e) {
+                    throw new FileException("setting.json文件配置失败",e);
+                }
+                List<Integer> realpointId = modelRealRelateService.list(
+                        new QueryWrapper<ModelRealRelate>().eq("model_id", modelId)
+                ).stream().map(ModelRealRelate::getRealPointId).collect(Collectors.toList());
+                RealToStandMapping realToStandMapping = RealToStandLabel(realpointId);
+                Map<Integer, List<RealPoint>> columnMapping = new HashMap<>();
+                for(RealPoint realPoint: realToStandMapping.getRealToStandPointMap().values()){
+                    Integer type = realPoint.getPointType();
+                    columnMapping.putIfAbsent(type, new ArrayList<>());
+                    columnMapping.get(type).add(realPoint);
+                }
+                //真实测点标签到标准测点标签
+                Map<String, String> realLabelToStandLabelMap = realToStandMapping.getRealLabelToStandLabelMap();
+                Map<LocalDateTime, Map<String, Object>> alignedData = new TreeMap<>();
+
+                while (startTimeDate.isBefore(endTimeDate)) {
+                    LocalDateTime windowEndTime = startTimeDate.plusSeconds(alertWindowSize);
+                    if (windowEndTime.isAfter(endTimeDate)) {
+                        System.out.println("窗口数据不足,当前预测任务取消");
+                        break;
+                    }
+                    alignedData.clear();
+                    String startTimeStr = startTimeDate.format(formatter);
+                    String windowEndTimeStr = windowEndTime.format(formatter);
+
+                    for(Map.Entry<Integer, List<RealPoint>> entry : columnMapping.entrySet()){
+                        Integer type = entry.getKey();
+                        List<RealPoint> point = entry.getValue();
+                        String tableName = getTableName(type) + "_" + getdivceName(type,point);
+                        List<Map<String ,Object>> data = commonDataService.selectDataByTime(tableName, point.stream().map(RealPoint::getPointLabel).collect(Collectors.toList()), startTimeStr, windowEndTimeStr);
+                        for (Map<String ,Object> record : data) {
+                            LocalDateTime datetime = ((Timestamp) record.get("datetime")).toLocalDateTime();
+                            for(Map.Entry<String, Object> recordEntry : record.entrySet()){
+                                String pointLabel = recordEntry.getKey();
+                                if(pointLabel.equals("datetime"))continue;
+                                // 真实测点标签 -> 标准测点标签
+                                String standPointLabel = realLabelToStandLabelMap.get(pointLabel);
+                                Double value = Double.valueOf(recordEntry.getValue().toString());
+                                // 将数据存储到 alignedData 中
+                                alignedData.computeIfAbsent(datetime, k -> new HashMap<>()).put(standPointLabel, value);
+                            }
+                        }
+                    }
+                    boolean res = toPredictCsv(alignedData, realLabelToStandLabelMap, taskLabel);
+                    if(!res) {
+                        LOGGER.info("数据有异常，取消此次预测任务");
+                        startTimeDate = startTimeDate.plusSeconds(alertInterval);
+                        continue;
+                    }
+                    executePredict(pythonFilePath, algorithmLabel, taskLabel, modelId, taskId);
+                    startTimeDate = startTimeDate.plusSeconds(alertInterval);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        };
+        // 定期调度任务
+        ScheduledFuture<?> scheduledTask =scheduler.schedule(task, 0, TimeUnit.SECONDS);
     }
 
     private void predict(Integer alertInterval, String modelLabel, String algorithmLabel, Integer modelId, Integer alertWindowSize,Integer deviceId) {
         Runnable task = () ->{
             try {
-                prePredict(modelId,modelLabel,algorithmLabel,alertWindowSize,deviceId);
+                prePredict(modelId,modelLabel,algorithmLabel,alertWindowSize);
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -498,7 +657,7 @@ public class ModelsServiceImpl extends ServiceImpl<ModelsMapper, Models> impleme
         taskMap.put(modelLabel + "_predict", scheduledTask);
     }
 
-    private void prePredict(Integer modelId, String modelLabel, String algorithmLabel, Integer alertWindowSize,Integer deviceId) {
+    private void prePredict(Integer modelId, String modelLabel, String algorithmLabel, Integer alertWindowSize) {
         try {
             String taskLabel = UUID.randomUUID().toString();
             Tasks newtask = new Tasks();
@@ -901,7 +1060,7 @@ public class ModelsServiceImpl extends ServiceImpl<ModelsMapper, Models> impleme
             throw new FileException("写入CSV文件失败", e);
         }
     }
-    private void toPredictCsv(Map<LocalDateTime, Map<String, Object>> alignedData, Map<String, String> realLabelToStandLabelMap, String taskLabel) {
+    private boolean toPredictCsv(Map<LocalDateTime, Map<String, Object>> alignedData, Map<String, String> realLabelToStandLabelMap, String taskLabel) {
         // 创建目标目录（如果不存在）
         File modelDir = new File(String.format("%s/task_logs/%s", pythonFilePath,taskLabel));
         if (!modelDir.exists()) {
@@ -926,8 +1085,10 @@ public class ModelsServiceImpl extends ServiceImpl<ModelsMapper, Models> impleme
                 }
                 csvWriter.append(line.toString()).append("\n");
             }
+            return true;
         } catch (IOException e) {
-            throw new FileException("写入CSV文件失败", e);
+            LOGGER.error("写入 CSV 文件失败", e);
+            return false;
         }
     }
     private void deleteDirectory(File dir) {
@@ -942,14 +1103,5 @@ public class ModelsServiceImpl extends ServiceImpl<ModelsMapper, Models> impleme
             }
         }
         dir.delete();
-    }
-    public static void writeFileContent(File file, List<ThresholdVO> items) {
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
-            String content = JSON.toJSONString(items); // 转换为 JSON 字符串
-            content = content.replace("null","NaN");
-            writer.write(content);  // 写入内容
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
     }
 }
