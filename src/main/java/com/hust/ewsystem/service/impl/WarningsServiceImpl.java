@@ -53,59 +53,145 @@ public class WarningsServiceImpl extends ServiceImpl<WarningsMapper, Warnings> i
 
     private final WarningsMapper warningsMapper;
 
-
     @Override
     public EwsResult<?> getWarningList(int page, int pageSize, String startDate, String endDate, Integer warningLevel, Integer companyId, Integer pvFarmId, Integer inverterId, Integer combinerBoxId) {
+        // 校验分页参数
+        if (page <= 0 || pageSize <= 0) {
+            return EwsResult.error("分页参数不合法");
+        }
+
+        // 获取 modelIdlist
         QueryWrapper<Models> queryWrapper = new QueryWrapper<>();
         List<Integer> modelIdlist = new ArrayList<>();
-        if(pvFarmId != null){
-            List<Integer> boxIds = boxTransService.list(new QueryWrapper<BoxTrans>().eq("pv_farm_id", pvFarmId)).stream().map(BoxTrans::getId).collect(Collectors.toList());
-            List<Integer> combinerIds = combinerBoxService.list(new QueryWrapper<CombinerBox>().in("box_id", boxIds)).stream().map(CombinerBox::getId).collect(Collectors.toList());
-            List<Integer> inverterIds = inverterService.list(new QueryWrapper<Inverter>().in("box_id", boxIds)).stream().map(Inverter::getId).collect(Collectors.toList());
-            queryWrapper.nested(wrapper -> wrapper.in("device_id", inverterIds).eq("model_type", 2))
-                    .or(wrapper -> wrapper.in("device_id", combinerIds).eq("model_type", 1));
-            modelIdlist = modelsService.list(queryWrapper).stream().map(Models::getModelId).collect(Collectors.toList());
-        }else if(inverterId != null) {
-            List<Integer> combinerIds = combinerBoxService.list(new QueryWrapper<CombinerBox>().eq("inverter_id", inverterId)).stream().map(CombinerBox::getId).collect(Collectors.toList());
-            queryWrapper.nested(wrapper -> wrapper.eq("device_id", inverterId).eq("model_type", 2))
-                    .or(wrapper -> wrapper.in("device_id", combinerIds).eq("model_type", 1));
-            modelIdlist = modelsService.list(queryWrapper).stream().map(Models::getModelId).collect(Collectors.toList());
 
-        }else if(combinerBoxId != null) {
-            queryWrapper.eq("device_id", combinerBoxId)
-                    .eq("model_type", 1);
+        if (pvFarmId != null) {
+            List<Integer> boxIds = boxTransService.list(new QueryWrapper<BoxTrans>().eq("pv_farm_id", pvFarmId))
+                    .stream().map(BoxTrans::getId).collect(Collectors.toList());
+            List<Integer> combinerIds = combinerBoxService.list(new QueryWrapper<CombinerBox>().in("box_id", boxIds))
+                    .stream().map(CombinerBox::getId).collect(Collectors.toList());
+            List<Integer> inverterIds = inverterService.list(new QueryWrapper<Inverter>().in("box_id", boxIds))
+                    .stream().map(Inverter::getId).collect(Collectors.toList());
+
+            // 构建条件：避免 device_id IN () 的情况
+            if (!CollectionUtils.isEmpty(inverterIds)) {
+                queryWrapper.nested(wrapper -> wrapper.in("device_id", inverterIds).eq("model_type", 2));
+            }
+            if (!CollectionUtils.isEmpty(combinerIds)) {
+                queryWrapper.or(wrapper -> wrapper.in("device_id", combinerIds).eq("model_type", 1));
+            }
+
             modelIdlist = modelsService.list(queryWrapper).stream().map(Models::getModelId).collect(Collectors.toList());
-        }else{
+        } else if (inverterId != null) {
+            List<Integer> combinerIds = combinerBoxService.list(new QueryWrapper<CombinerBox>().eq("inverter_id", inverterId))
+                    .stream().map(CombinerBox::getId).collect(Collectors.toList());
+
+            // 构建条件：避免 device_id IN () 的情况
+            queryWrapper.nested(wrapper -> wrapper.eq("device_id", inverterId).eq("model_type", 2));
+            if (!CollectionUtils.isEmpty(combinerIds)) {
+                queryWrapper.or(wrapper -> wrapper.in("device_id", combinerIds).eq("model_type", 1));
+            }
+
+            modelIdlist = modelsService.list(queryWrapper).stream().map(Models::getModelId).collect(Collectors.toList());
+        } else if (combinerBoxId != null) {
+            queryWrapper.eq("device_id", combinerBoxId).eq("model_type", 1);
+            modelIdlist = modelsService.list(queryWrapper).stream().map(Models::getModelId).collect(Collectors.toList());
+        } else {
             List<Integer> boxIds = boxTransService.list().stream().map(BoxTrans::getId).collect(Collectors.toList());
-            List<Integer> combinerIds = combinerBoxService.list(new QueryWrapper<CombinerBox>().in("box_id", boxIds)).stream().map(CombinerBox::getId).collect(Collectors.toList());
-            List<Integer> inverterIds = inverterService.list(new QueryWrapper<Inverter>().in("box_id", boxIds)).stream().map(Inverter::getId).collect(Collectors.toList());
-            queryWrapper.nested(wrapper -> wrapper.in("device_id", inverterIds).eq("model_type", 2))
-                    .or(wrapper -> wrapper.in("device_id", combinerIds).eq("model_type", 1));
+            List<Integer> combinerIds = combinerBoxService.list(new QueryWrapper<CombinerBox>().in("box_id", boxIds))
+                    .stream().map(CombinerBox::getId).collect(Collectors.toList());
+            List<Integer> inverterIds = inverterService.list(new QueryWrapper<Inverter>().in("box_id", boxIds))
+                    .stream().map(Inverter::getId).collect(Collectors.toList());
+
+            // 构建条件：避免 device_id IN () 的情况
+            if (!CollectionUtils.isEmpty(inverterIds)) {
+                queryWrapper.nested(wrapper -> wrapper.in("device_id", inverterIds).eq("model_type", 2));
+            }
+            if (!CollectionUtils.isEmpty(combinerIds)) {
+                queryWrapper.or(wrapper -> wrapper.in("device_id", combinerIds).eq("model_type", 1));
+            }
+
             modelIdlist = modelsService.list(queryWrapper).stream().map(Models::getModelId).collect(Collectors.toList());
         }
-        Page<Warnings> warningsPage = new Page<>(page, pageSize);
+
+        // 如果 modelIdlist 为空，直接返回空结果
+        if (CollectionUtils.isEmpty(modelIdlist)) {
+            Map<String, Object> result = new HashMap<>();
+            result.put("warningList", new ArrayList<>());
+            result.put("total_count", 0);
+            result.put("page", page);
+            result.put("page_size", pageSize);
+            result.put("total_pages", 0);
+            return EwsResult.OK("查询成功", result);
+        }
+
+        // 构建警告查询条件
         QueryWrapper<Warnings> queryWrapper2 = new QueryWrapper<>();
         queryWrapper2.in("model_id", modelIdlist);
-        if(endDate != null){
-            queryWrapper2.ge("start_time", startDate).le("end_time", endDate);
+
+        // 处理时间范围
+        if (StringUtils.isNotBlank(startDate)) {
+            queryWrapper2.ge("start_time", startDate);
         }
-        else{
-            queryWrapper2.ge("start_time", startDate).le("end_time", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+        if (StringUtils.isNotBlank(endDate)) {
+            queryWrapper2.le("end_time", endDate);
+        } else {
+            queryWrapper2.le("end_time", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
         }
-        if(warningLevel != null){
+
+        // 处理警告级别
+        if (warningLevel != null) {
             queryWrapper2.eq("warning_level", warningLevel);
         }
+
+        // 分页查询
+        Page<Warnings> warningsPage = new Page<>(page, pageSize);
         Page<Warnings> page1 = page(warningsPage, queryWrapper2);
-        Map<String,Object> result = new HashMap<>();
-        if(!page1.getRecords().isEmpty()){
-            result.put("warningList",page1.getRecords());
-        }else {
-            result.put("warningList",new ArrayList<>());
-        }
-        result.put("total_count",page1.getTotal());
-        result.put("page",page1.getCurrent());
-        result.put("page_size",page1.getSize());
-        result.put("total_pages",page1.getPages());
+
+        // 获取所有 model_id
+        List<Integer> modelIds = page1.getRecords().stream()
+                .map(Warnings::getModelId)
+                .distinct()
+                .collect(Collectors.toList());
+
+        // 批量查询 models 表
+        Map<Integer, Models> modelsMap = modelsService.listByIds(modelIds).stream()
+                .collect(Collectors.toMap(Models::getModelId, model -> model));
+
+        // 构造返回的 warningList，动态添加 deviceId 和 modelType
+        List<Map<String, Object>> warningList = page1.getRecords().stream().map(warning -> {
+            Map<String, Object> warningMap = new HashMap<>();
+            warningMap.put("warningId", warning.getWarningId());
+            warningMap.put("warningLevel", warning.getWarningLevel());
+            warningMap.put("warningStatus", warning.getWarningStatus());
+            warningMap.put("modelId", warning.getModelId());
+            warningMap.put("startTime", warning.getStartTime());
+            warningMap.put("endTime", warning.getEndTime());
+            warningMap.put("handleTime", warning.getHandleTime());
+            warningMap.put("warningDescription", warning.getWarningDescription());
+            warningMap.put("valid", warning.getValid());
+            warningMap.put("repetition", warning.getRepetition());
+
+            // 动态添加 deviceId 和 modelType
+            Models model = modelsMap.get(warning.getModelId());
+            if (model != null) {
+                warningMap.put("deviceId", model.getDeviceId());
+                warningMap.put("modelType", model.getModelType());
+            } else {
+                warningMap.put("deviceId", null);
+                warningMap.put("modelType", null);
+            }
+
+            return warningMap;
+        }).collect(Collectors.toList());
+
+        // 构建返回结果
+        Map<String, Object> result = new HashMap<>();
+        result.put("warningList", warningList);
+        result.put("total_count", page1.getTotal());
+        result.put("page", page1.getCurrent());
+        result.put("page_size", page1.getSize());
+        result.put("total_pages", page1.getPages());
+
         return EwsResult.OK("查询成功", result);
     }
 

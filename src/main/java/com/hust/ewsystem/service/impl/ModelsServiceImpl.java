@@ -758,7 +758,7 @@ public class ModelsServiceImpl extends ServiceImpl<ModelsMapper, Models> impleme
         try {
             // 准备命令
             List<String> command = new ArrayList<>();
-            command.add("python3");
+            command.add("python");
             command.add(String.format("alg/%s/train.py", algorithmLabel));
             command.add(String.format("task_logs/%s/setting.json", taskLabel));
             // 执行命令
