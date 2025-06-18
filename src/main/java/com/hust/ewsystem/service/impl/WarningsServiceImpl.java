@@ -146,6 +146,16 @@ public class WarningsServiceImpl extends ServiceImpl<WarningsMapper, Warnings> i
         // 分页查询
         Page<Warnings> warningsPage = new Page<>(page, pageSize);
         Page<Warnings> page1 = page(warningsPage, queryWrapper2);
+        // 构建返回结果
+        if (page1.getRecords().isEmpty()) {
+            Map<String, Object> result = new HashMap<>();
+            result.put("warningList", new ArrayList<>());
+            result.put("total_count", 0);
+            result.put("page", page);
+            result.put("page_size", pageSize);
+            result.put("total_pages", 0);
+            return EwsResult.OK("查询成功", result);
+        }
 
         // 获取所有 model_id
         List<Integer> modelIds = page1.getRecords().stream()
