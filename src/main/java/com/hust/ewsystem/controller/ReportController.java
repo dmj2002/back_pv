@@ -9,6 +9,7 @@ import com.hust.ewsystem.DAO.DTO.ReportDTO;
 import com.hust.ewsystem.DAO.PO.ReportWarningRelate;
 import com.hust.ewsystem.DAO.PO.Reports;
 import com.hust.ewsystem.DAO.PO.Warnings;
+import com.hust.ewsystem.DAO.VO.ReportVO;
 import com.hust.ewsystem.common.result.EwsResult;
 
 import com.hust.ewsystem.mapper.ReportsMapper;
@@ -76,8 +77,8 @@ public class ReportController {
 
 
     @RequestMapping(value = "/getReportList",method = RequestMethod.POST)
-    public EwsResult<IPage<Reports>>  getReportList(@Valid @RequestBody QueryReportsDTO queryReportsDTO){
-        IPage<Reports> reportList = reportsService.getReportList(queryReportsDTO);
+    public EwsResult<IPage<ReportVO>>  getReportList(@Valid @RequestBody QueryReportsDTO queryReportsDTO){
+        IPage<ReportVO> reportList = reportsService.getReportList(queryReportsDTO);
         return EwsResult.OK(reportList);
     }
 }

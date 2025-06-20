@@ -38,4 +38,6 @@ public class Reports implements Serializable {
     private Integer valid;//有效
 
     private Integer repetition;//重复
+    public Reports() {
+    }
 }
