@@ -186,9 +186,17 @@ public class WarningsServiceImpl extends ServiceImpl<WarningsMapper, Warnings> i
             if (model != null) {
                 warningMap.put("deviceId", model.getDeviceId());
                 warningMap.put("modelType", model.getModelType());
+                if(model.getModelType() == 1) {
+                    String combinerBoxName = combinerBoxService.getById(model.getDeviceId()).getCombinerBoxName();
+                    warningMap.put("deviceName", combinerBoxName);
+                }else if(model.getModelType() == 2) {
+                    String inverterName = inverterService.getById(model.getDeviceId()).getInverterName();
+                    warningMap.put("deviceName", inverterName);
+                }
             } else {
                 warningMap.put("deviceId", null);
                 warningMap.put("modelType", null);
+                warningMap.put("deviceName", null);
             }
 
             return warningMap;
