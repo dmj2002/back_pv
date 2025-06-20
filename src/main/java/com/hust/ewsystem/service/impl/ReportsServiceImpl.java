@@ -8,7 +8,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.hust.ewsystem.DAO.DTO.QueryReportsDTO;
 import com.hust.ewsystem.DAO.PO.*;
 
-import com.hust.ewsystem.mapper.EmployeeMapper;
+import com.hust.ewsystem.DAO.VO.ReportVO;
 import com.hust.ewsystem.mapper.ReportsMapper;
 import com.hust.ewsystem.service.BoxTransService;
 import com.hust.ewsystem.service.CombinerBoxService;
@@ -16,6 +16,7 @@ import com.hust.ewsystem.service.InverterService;
 import com.hust.ewsystem.service.ReportsService;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -46,7 +47,7 @@ public class ReportsServiceImpl extends ServiceImpl<ReportsMapper, Reports> impl
 
 
     @Override
-    public IPage<Reports> getReportList(QueryReportsDTO queryReportsDTO) {
+    public IPage<ReportVO> getReportList(QueryReportsDTO queryReportsDTO) {
         Page<Reports> page = new Page<>(queryReportsDTO.getPageNo(), queryReportsDTO.getPageSize());
         QueryWrapper<Reports> queryWrapper = new QueryWrapper<>();
         if(queryReportsDTO.getPvFarmId() != null){
@@ -72,6 +73,27 @@ public class ReportsServiceImpl extends ServiceImpl<ReportsMapper, Reports> impl
         }
         queryWrapper.ge("initial_time",queryReportsDTO.getStartTime()).le("initial_time",queryReportsDTO.getEndTime());
         Page<Reports> reportsPage = reportsMapper.selectPage(page, queryWrapper);
-        return reportsPage;
+        // 设置设备名称
+        List<ReportVO> reportVOList = reportsPage.getRecords().stream().map(report -> {
+            ReportVO reportVO = new ReportVO();
+            BeanUtils.copyProperties(report, reportVO);
+            if (report.getDeviceType() == 1) {
+                CombinerBox combinerBox = combinerBoxService.getById(report.getDeviceId());
+                reportVO.setDeviceName(combinerBox != null ? combinerBox.getCombinerBoxName() : "未知汇流箱");
+            } else if (report.getDeviceType() == 2) {
+                Inverter inverter = inverterService.getById(report.getDeviceId());
+                reportVO.setDeviceName(inverter != null ? inverter.getInverterName() : "未知逆变器");
+            } else {
+                reportVO.setDeviceName("未知设备");
+            }
+            return reportVO;
+        }).collect(Collectors.toList());
+        // 封装成 Page<ReportVO> 对象
+        Page<ReportVO> reportVOPage = new Page<>();
+        reportVOPage.setCurrent(reportsPage.getCurrent());
+        reportVOPage.setSize(reportsPage.getSize());
+        reportVOPage.setTotal(reportsPage.getTotal());
+        reportVOPage.setRecords(reportVOList);
+        return reportVOPage;
     }
 }
