@@ -24,7 +24,7 @@ public class Reports implements Serializable {
     private String reportLabel;  // 报告标签
 
     private Integer deviceId;
-
+ 
     private Integer deviceType;
 
     private Integer employeeId;  // 员工id
