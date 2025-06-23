@@ -52,15 +52,28 @@ public class ReportsServiceImpl extends ServiceImpl<ReportsMapper, Reports> impl
         QueryWrapper<Reports> queryWrapper = new QueryWrapper<>();
         if(queryReportsDTO.getPvFarmId() != null){
             List<Integer> boxIds = boxTransService.list(new QueryWrapper<BoxTrans>().eq("pv_farm_id", queryReportsDTO.getPvFarmId())).stream().map(BoxTrans::getId).collect(Collectors.toList());
+            if(boxIds.isEmpty()){
+                return new Page<>(page.getCurrent(), page.getSize(), 0);
+            }
             List<Integer> combinerIds = combinerBoxService.list(new QueryWrapper<CombinerBox>().in("box_id", boxIds)).stream().map(CombinerBox::getId).collect(Collectors.toList());
             List<Integer> inverterIds = inverterService.list(new QueryWrapper<Inverter>().in("box_id", boxIds)).stream().map(Inverter::getId).collect(Collectors.toList());
-            queryWrapper.nested(wrapper -> wrapper.in("device_id", inverterIds).eq("device_type", 2))
-                    .or(wrapper -> wrapper.in("device_id", combinerIds).eq("device_type", 1));
+            queryWrapper.nested(wrapper -> {
+                if(!combinerIds.isEmpty()){
+                    wrapper.or().in("device_id", combinerIds).eq("device_type", 1);
+                }
+                if(!inverterIds.isEmpty()){
+                    wrapper.or().in("device_id", inverterIds).eq("device_type", 2);
+                }
+            });
         }
         else if(queryReportsDTO.getInverterId() != null){
             List<Integer> combinerIds = combinerBoxService.list(new QueryWrapper<CombinerBox>().eq("inverter_id", queryReportsDTO.getInverterId())).stream().map(CombinerBox::getId).collect(Collectors.toList());
-            queryWrapper.nested(wrapper -> wrapper.eq("device_id", queryReportsDTO.getInverterId()).eq("device_type", 2))
-                    .or(wrapper -> wrapper.in("device_id", combinerIds).eq("device_type", 1));
+            queryWrapper.nested(wrapper -> {
+                wrapper.eq("device_id", queryReportsDTO.getInverterId()).eq("device_type", 2);
+                if (!combinerIds.isEmpty()) {
+                    wrapper.or().in("device_id", combinerIds).eq("device_type", 1);
+                }
+            });
         }else if(queryReportsDTO.getCombinerBoxId() != null){
             queryWrapper.eq("device_id", queryReportsDTO.getCombinerBoxId())
                     .eq("model_type", 1);
@@ -68,8 +81,14 @@ public class ReportsServiceImpl extends ServiceImpl<ReportsMapper, Reports> impl
             List<Integer> boxIds = boxTransService.list().stream().map(BoxTrans::getId).collect(Collectors.toList());
             List<Integer> combinerIds = combinerBoxService.list(new QueryWrapper<CombinerBox>().in("box_id", boxIds)).stream().map(CombinerBox::getId).collect(Collectors.toList());
             List<Integer> inverterIds = inverterService.list(new QueryWrapper<Inverter>().in("box_id", boxIds)).stream().map(Inverter::getId).collect(Collectors.toList());
-            queryWrapper.nested(wrapper -> wrapper.in("device_id", inverterIds).eq("device_type", 2))
-                    .or(wrapper -> wrapper.in("device_id", combinerIds).eq("device_type", 1));
+            queryWrapper.nested(wrapper -> {
+                if(!combinerIds.isEmpty()){
+                    wrapper.or().in("device_id", combinerIds).eq("device_type", 1);
+                }
+                if(!inverterIds.isEmpty()){
+                    wrapper.or().in("device_id", inverterIds).eq("device_type", 2);
+                }
+            });
         }
         queryWrapper.ge("initial_time",queryReportsDTO.getStartTime()).le("initial_time",queryReportsDTO.getEndTime());
         Page<Reports> reportsPage = reportsMapper.selectPage(page, queryWrapper);
