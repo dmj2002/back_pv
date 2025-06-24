@@ -1,6 +1,7 @@
 package com.hust.ewsystem.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.hust.ewsystem.DAO.DTO.FarmDTO;
 import com.hust.ewsystem.DAO.PO.BoxTrans;
 import com.hust.ewsystem.DAO.PO.CombinerBox;
 import com.hust.ewsystem.DAO.PO.Inverter;
@@ -37,6 +38,7 @@ public class DeviceController {
     private final CombinerBoxService combinerBoxService;
 
     private final WarningsMapper warningsMapper;
+
 
     @GetMapping("/list")
     public EwsResult<?> deviceList(@RequestParam(value = "pvFarmId") Integer pvFarmId) {
@@ -103,6 +105,40 @@ public class DeviceController {
         }else if(deviceType == 2) {
             String inverterName = inverterService.getById(deviceId).getInverterName();
             return EwsResult.OK("查询成功", inverterName);
+        }else{
+            return EwsResult.error("查询失败,不包含次设备类型");
+        }
+    }
+    @GetMapping("/getfarmInfo")
+    public EwsResult<FarmDTO>getfarmInfo(@RequestParam(value = "deviceId") Integer deviceId,
+                                         @RequestParam(value = "deviceType") Integer deviceType){
+        FarmDTO farmDTO = new FarmDTO();
+        if(deviceType == 0) {
+            Integer pvFarmId = pvFarmService.getById(deviceId).getId();
+            String pvFarmName = pvFarmService.getById(pvFarmId).getPvFarmName();
+            farmDTO.setPvFarmId(pvFarmId);
+            farmDTO.setPvFarmName(pvFarmName);
+            return EwsResult.OK("查询成功", farmDTO);
+        }
+        else if(deviceType == 1){
+            CombinerBox combinerBox = combinerBoxService.getById(deviceId);
+            BoxTrans boxTrans = boxTransService.getById(combinerBox.getBoxId());
+            String pvFarmName = pvFarmService.getById(boxTrans.getPvFarmId()).getPvFarmName();
+            farmDTO.setPvFarmId(boxTrans.getPvFarmId());
+            farmDTO.setPvFarmName(pvFarmName);
+            farmDTO.setCombinerBoxId(combinerBox.getId());
+            farmDTO.setCombinerBoxName(combinerBox.getCombinerBoxName());
+            return EwsResult.OK("查询成功", farmDTO);
+        }
+        else if(deviceType == 2){
+            Inverter inverter = inverterService.getById(deviceId);
+            BoxTrans boxTrans = boxTransService.getById(inverter.getBoxId());
+            String pvFarmName = pvFarmService.getById(boxTrans.getPvFarmId()).getPvFarmName();
+            farmDTO.setPvFarmId(boxTrans.getPvFarmId());
+            farmDTO.setPvFarmName(pvFarmName);
+            farmDTO.setInverterId(inverter.getId());
+            farmDTO.setInverterName(inverter.getInverterName());
+            return EwsResult.OK("查询成功", farmDTO);
         }else{
             return EwsResult.error("查询失败,不包含次设备类型");
         }

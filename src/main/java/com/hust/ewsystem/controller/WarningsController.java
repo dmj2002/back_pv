@@ -1,5 +1,6 @@
 package com.hust.ewsystem.controller;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.hust.ewsystem.DAO.DTO.*;
@@ -15,9 +16,11 @@ import com.hust.ewsystem.mapper.ReportsMapper;
 import com.hust.ewsystem.service.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -39,6 +42,8 @@ public class WarningsController {
     private final ReportsMapper reportsMapper;
 
     private final ReportWarningRelateMapper reportWarningRelateMapper;
+
+    private final ReportWarningRelateService reportWarningRelateService;
 
     private final PictureStandRelateMapper pictureStandRelateMapper;
 
@@ -189,6 +194,20 @@ public class WarningsController {
         return EwsResult.OK(warnInfo);
     }
 
+    @RequestMapping(value = "/getWarnInfoListByReportId",method = RequestMethod.GET)
+    public EwsResult<List<Warnings>> getWarnInfoListByReportId(@RequestParam(value = "reportId") @NotNull(message = "通知ID不能为空") Integer reportId){
+        LambdaQueryWrapper<ReportWarningRelate> relateWrapper = new LambdaQueryWrapper<>();
+        relateWrapper.eq(ReportWarningRelate::getReportId,reportId);
+        List<Integer> warnIdList = new ArrayList<>();
+        List<ReportWarningRelate> reportWarningRelateList = reportWarningRelateService.list(relateWrapper);
+        if (!CollectionUtils.isEmpty(reportWarningRelateList)){
+            for (ReportWarningRelate reportWarningRelate : reportWarningRelateList) {
+                warnIdList.add(reportWarningRelate.getWarningId());
+            }
+        }
+        List<Warnings> warnInfoListByReportId = warningsService.getWarnInfoListByReportId(warnIdList);
+        return EwsResult.OK("处理成功",warnInfoListByReportId);
+    }
     @RequestMapping(value = "/getWarnInfoList",method = RequestMethod.POST)
     public EwsResult<List<WarningsVO>> getWarnInfoList(@Valid @RequestBody QueryWarnInfoDTO queryWarnInfoDTO){
         List<WarningsVO> warnInfo = warningsService.getWarnDesc(queryWarnInfoDTO);

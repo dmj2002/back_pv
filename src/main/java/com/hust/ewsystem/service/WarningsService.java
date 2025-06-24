@@ -28,4 +28,6 @@ public interface WarningsService extends IService<Warnings> {
     List<WarningsVO> getWarnDesc(QueryWarnInfoDTO queryWarnInfoDTO);
 
     List<WarningsVO> getWarnInfo(QueryWarnInfoDTO queryWarnInfoDTO);
+
+    List<Warnings> getWarnInfoListByReportId(List<Integer> warnIdList);
 }

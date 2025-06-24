@@ -9,6 +9,7 @@ import com.hust.ewsystem.DAO.DTO.QueryReportsDTO;
 import com.hust.ewsystem.DAO.PO.*;
 
 import com.hust.ewsystem.DAO.VO.ReportVO;
+import com.hust.ewsystem.mapper.EmployeeMapper;
 import com.hust.ewsystem.mapper.ReportsMapper;
 import com.hust.ewsystem.service.BoxTransService;
 import com.hust.ewsystem.service.CombinerBoxService;
@@ -44,6 +45,8 @@ public class ReportsServiceImpl extends ServiceImpl<ReportsMapper, Reports> impl
     private final InverterService inverterService;
 
     private final ReportsMapper reportsMapper;
+
+    private final EmployeeMapper employeeMapper;
 
 
     @Override
@@ -105,6 +108,8 @@ public class ReportsServiceImpl extends ServiceImpl<ReportsMapper, Reports> impl
             } else {
                 reportVO.setDeviceName("未知设备");
             }
+            Employee employee = report.getEmployeeId() != null ? employeeMapper.selectById(report.getEmployeeId()) : null;
+            reportVO.setEmployeeName(employee != null ? employee.getEmployeeName() : "未知员工");
             return reportVO;
         }).collect(Collectors.toList());
         // 封装成 Page<ReportVO> 对象

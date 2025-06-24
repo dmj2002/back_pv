@@ -364,6 +364,13 @@ public class WarningsServiceImpl extends ServiceImpl<WarningsMapper, Warnings> i
         return warnings;
     }
 
+    @Override
+    public List<Warnings> getWarnInfoListByReportId(List<Integer> warnIdList) {
+        LambdaQueryWrapper<Warnings> wrapper = new LambdaQueryWrapper<>();
+        wrapper.in(Warnings::getWarningId,warnIdList);
+        return warningsMapper.selectList(wrapper);
+    }
+
     private int getWarnCount(Integer deviceId,Integer deviceType, QueryPvWarnMatrixDTO queryPvWarnMatrixDTO) {
         int warnCount = 0;
         LambdaQueryWrapper<Models> queryWrapper = new LambdaQueryWrapper<>();

@@ -11,6 +11,11 @@ import lombok.experimental.Accessors;
 public class ReportVO extends Reports {
     private String deviceName;
 
+    /**
+     * 员工查姓名
+     */
+    private String employeeName;
+
     public ReportVO() {
         super();
     }
