@@ -3,6 +3,7 @@ package com.hust.ewsystem.controller;
 import com.hust.ewsystem.DAO.PO.Company;
 import com.hust.ewsystem.common.result.EwsResult;
 import com.hust.ewsystem.service.CompanyService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -16,9 +17,10 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/company")
+@RequiredArgsConstructor
 public class CompanyController {
-    @Resource
-    private CompanyService companyService;
+
+    private final CompanyService companyService;
     @GetMapping("/list")
     public EwsResult<List<Company>> listCompany() {
         List<Company> company = companyService.list();
