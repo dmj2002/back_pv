@@ -91,7 +91,7 @@ public class ModelsServiceImpl extends ServiceImpl<ModelsMapper, Models> impleme
         Integer algorithmType = algorithmsService.getById(modelAddDTO.getAlgorithmId()).getAlgorithmType();
         List<Models> modelsList = new ArrayList<>();
         List<Integer> deviceList = modelAddDTO.getDeviceList();
-        if(modelAddDTO.getIsAll() && deviceList.isEmpty()){
+        if(modelAddDTO.getIsAll() && modelAddDTO.getPvFarmId() != null && deviceList.isEmpty()){
             List<Integer> boxIds = boxTransService.list(new QueryWrapper<BoxTrans>().eq("pv_farm_id", modelAddDTO.getPvFarmId()))
                     .stream()
                     .map(BoxTrans::getId)
