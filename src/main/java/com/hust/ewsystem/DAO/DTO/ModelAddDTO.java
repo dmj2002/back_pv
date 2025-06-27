@@ -16,6 +16,12 @@ public class ModelAddDTO {
 
     private String modelName;
 
+    private Integer pvFarmId;
+
+    private Boolean isAll;
+
+    private Integer deviceType;
+
     private List<Integer> deviceList;
 
     private Integer algorithmId;

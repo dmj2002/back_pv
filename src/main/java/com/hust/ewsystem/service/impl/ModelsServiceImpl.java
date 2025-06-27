@@ -90,7 +90,33 @@ public class ModelsServiceImpl extends ServiceImpl<ModelsMapper, Models> impleme
     public EwsResult<?> addModel(ModelAddDTO modelAddDTO) {
         Integer algorithmType = algorithmsService.getById(modelAddDTO.getAlgorithmId()).getAlgorithmType();
         List<Models> modelsList = new ArrayList<>();
-        for(Integer deviceId : modelAddDTO.getDeviceList()){
+        List<Integer> deviceList = modelAddDTO.getDeviceList();
+        if(modelAddDTO.getIsAll() && deviceList.isEmpty()){
+            List<Integer> boxIds = boxTransService.list(new QueryWrapper<BoxTrans>().eq("pv_farm_id", modelAddDTO.getPvFarmId()))
+                    .stream()
+                    .map(BoxTrans::getId)
+                    .collect(Collectors.toList());
+            if(boxIds.isEmpty()){
+                throw new CrudException("该电厂下没有设备");
+            }
+            switch (modelAddDTO.getDeviceType()) {
+                case 1: // 汇流箱
+                    deviceList = inverterService.list(new QueryWrapper<Inverter>().in("box_id", boxIds))
+                            .stream()
+                            .map(Inverter::getId)
+                            .collect(Collectors.toList());
+                    break;
+                case 2: // 逆变器
+                    deviceList = combinerBoxService.list(new QueryWrapper<CombinerBox>().in("box_id", boxIds))
+                            .stream()
+                            .map(CombinerBox::getId)
+                            .collect(Collectors.toList());
+                    break;
+                default:
+                    throw new CrudException("设备类型错误");
+            }
+        }
+        for(Integer deviceId : deviceList){
             //先写传入的模型参数
             Models newModel = new Models();
             newModel.setModelName(modelAddDTO.getModelName() + "_" + deviceId)
