@@ -222,7 +222,7 @@ public class ModelsServiceImpl extends ServiceImpl<ModelsMapper, Models> impleme
             if(modelChangeDTO.getAlertInterval() != null){
                 model.setAlertInterval(modelChangeDTO.getAlertInterval());
             }
-            if(modelChangeDTO.getParams().isNull()){
+            if(!modelChangeDTO.getParams().isNull()){
                 model.setModelParameters(modelChangeDTO.getParams());
             }
             String[] versionParts = model.getModelVersion().split("\\.");
