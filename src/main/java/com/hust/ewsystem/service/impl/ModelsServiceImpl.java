@@ -401,14 +401,24 @@ public class ModelsServiceImpl extends ServiceImpl<ModelsMapper, Models> impleme
             List<Integer> boxIds = boxTransService.list(new QueryWrapper<BoxTrans>().eq("pv_farm_id", pvFarmId)).stream().map(BoxTrans::getId).collect(Collectors.toList());
             List<Integer> combinerIds = combinerBoxService.list(new QueryWrapper<CombinerBox>().in("box_id", boxIds)).stream().map(CombinerBox::getId).collect(Collectors.toList());
             List<Integer> inverterIds = inverterService.list(new QueryWrapper<Inverter>().in("box_id", boxIds)).stream().map(Inverter::getId).collect(Collectors.toList());
-            queryWrapper.nested(wrapper -> wrapper.in("device_id", inverterIds).eq("model_type", 2))
-                    .or(wrapper -> wrapper.in("device_id", combinerIds).eq("model_type", 1));
+            queryWrapper.nested(wrapper -> {
+                if(!combinerIds.isEmpty()){
+                    wrapper.or().in("device_id", combinerIds).eq("device_type", 1);
+                }
+                if(!inverterIds.isEmpty()){
+                    wrapper.or().in("device_id", inverterIds).eq("device_type", 2);
+                }
+            });
             Page<Models> res = page(modelsPage, queryWrapper);
             return getEwsResult(res);
         }else if(inverterId != null) {
             List<Integer> combinerIds = combinerBoxService.list(new QueryWrapper<CombinerBox>().eq("inverter_id", inverterId)).stream().map(CombinerBox::getId).collect(Collectors.toList());
-            queryWrapper.nested(wrapper -> wrapper.eq("device_id", inverterId).eq("model_type", 2))
-                    .or(wrapper -> wrapper.in("device_id", combinerIds).eq("model_type", 1));
+            queryWrapper.nested(wrapper -> {
+                wrapper.eq("device_id",inverterId).eq("device_type", 2);
+                if (!combinerIds.isEmpty()) {
+                    wrapper.or().in("device_id", combinerIds).eq("device_type", 1);
+                }
+            });
             Page<Models> res = page(modelsPage, queryWrapper);
             return getEwsResult(res);
 
@@ -421,8 +431,14 @@ public class ModelsServiceImpl extends ServiceImpl<ModelsMapper, Models> impleme
             List<Integer> boxIds = boxTransService.list().stream().map(BoxTrans::getId).collect(Collectors.toList());
             List<Integer> combinerIds = combinerBoxService.list(new QueryWrapper<CombinerBox>().in("box_id", boxIds)).stream().map(CombinerBox::getId).collect(Collectors.toList());
             List<Integer> inverterIds = inverterService.list(new QueryWrapper<Inverter>().in("box_id", boxIds)).stream().map(Inverter::getId).collect(Collectors.toList());
-            queryWrapper.nested(wrapper -> wrapper.in("device_id", inverterIds).eq("model_type", 2))
-                    .or(wrapper -> wrapper.in("device_id", combinerIds).eq("model_type", 1));
+            queryWrapper.nested(wrapper -> {
+                if(!combinerIds.isEmpty()){
+                    wrapper.or().in("device_id", combinerIds).eq("device_type", 1);
+                }
+                if(!inverterIds.isEmpty()){
+                    wrapper.or().in("device_id", inverterIds).eq("device_type", 2);
+                }
+            });
             Page<Models> res = page(modelsPage, queryWrapper);
             return getEwsResult(res);
         }
