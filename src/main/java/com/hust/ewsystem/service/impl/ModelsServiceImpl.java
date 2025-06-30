@@ -446,7 +446,7 @@ public class ModelsServiceImpl extends ServiceImpl<ModelsMapper, Models> impleme
 
     private EwsResult<?> getEwsResult(Page<Models> res) {
         if (res.getRecords().isEmpty() || res.getRecords() == null) {
-            return EwsResult.error("查询结果为空");
+            return EwsResult.error("查询结果为空",Collections.emptyList());
         }
         List<Models> records = res.getRecords();
         List<Map<String, Object>> result = new ArrayList<>();
