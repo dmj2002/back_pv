@@ -403,10 +403,10 @@ public class ModelsServiceImpl extends ServiceImpl<ModelsMapper, Models> impleme
             List<Integer> inverterIds = inverterService.list(new QueryWrapper<Inverter>().in("box_id", boxIds)).stream().map(Inverter::getId).collect(Collectors.toList());
             queryWrapper.nested(wrapper -> {
                 if(!combinerIds.isEmpty()){
-                    wrapper.or().in("device_id", combinerIds).eq("device_type", 1);
+                    wrapper.or().in("device_id", combinerIds).eq("model_type", 1);
                 }
                 if(!inverterIds.isEmpty()){
-                    wrapper.or().in("device_id", inverterIds).eq("device_type", 2);
+                    wrapper.or().in("device_id", inverterIds).eq("model_type", 2);
                 }
             });
             Page<Models> res = page(modelsPage, queryWrapper);

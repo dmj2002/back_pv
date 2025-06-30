@@ -63,8 +63,21 @@ public class WarningsServiceImpl extends ServiceImpl<WarningsMapper, Warnings> i
         // 获取 modelIdlist
         QueryWrapper<Models> queryWrapper = new QueryWrapper<>();
         List<Integer> modelIdlist = new ArrayList<>();
+        if (combinerBoxId != null) {
+            queryWrapper.eq("device_id", combinerBoxId).eq("model_type", 1);
+            modelIdlist = modelsService.list(queryWrapper).stream().map(Models::getModelId).collect(Collectors.toList());
+        } else if (inverterId != null) {
+            List<Integer> combinerIds = combinerBoxService.list(new QueryWrapper<CombinerBox>().eq("inverter_id", inverterId))
+                    .stream().map(CombinerBox::getId).collect(Collectors.toList());
 
-        if (pvFarmId != null) {
+            // 构建条件：避免 device_id IN () 的情况
+            queryWrapper.nested(wrapper -> wrapper.eq("device_id", inverterId).eq("model_type", 2));
+            if (!CollectionUtils.isEmpty(combinerIds)) {
+                queryWrapper.or(wrapper -> wrapper.in("device_id", combinerIds).eq("model_type", 1));
+            }
+
+            modelIdlist = modelsService.list(queryWrapper).stream().map(Models::getModelId).collect(Collectors.toList());
+        } else if (pvFarmId != null) {
             List<Integer> boxIds = boxTransService.list(new QueryWrapper<BoxTrans>().eq("pv_farm_id", pvFarmId))
                     .stream().map(BoxTrans::getId).collect(Collectors.toList());
             List<Integer> combinerIds = combinerBoxService.list(new QueryWrapper<CombinerBox>().in("box_id", boxIds))
@@ -80,20 +93,6 @@ public class WarningsServiceImpl extends ServiceImpl<WarningsMapper, Warnings> i
                 queryWrapper.or(wrapper -> wrapper.in("device_id", combinerIds).eq("model_type", 1));
             }
 
-            modelIdlist = modelsService.list(queryWrapper).stream().map(Models::getModelId).collect(Collectors.toList());
-        } else if (inverterId != null) {
-            List<Integer> combinerIds = combinerBoxService.list(new QueryWrapper<CombinerBox>().eq("inverter_id", inverterId))
-                    .stream().map(CombinerBox::getId).collect(Collectors.toList());
-
-            // 构建条件：避免 device_id IN () 的情况
-            queryWrapper.nested(wrapper -> wrapper.eq("device_id", inverterId).eq("model_type", 2));
-            if (!CollectionUtils.isEmpty(combinerIds)) {
-                queryWrapper.or(wrapper -> wrapper.in("device_id", combinerIds).eq("model_type", 1));
-            }
-
-            modelIdlist = modelsService.list(queryWrapper).stream().map(Models::getModelId).collect(Collectors.toList());
-        } else if (combinerBoxId != null) {
-            queryWrapper.eq("device_id", combinerBoxId).eq("model_type", 1);
             modelIdlist = modelsService.list(queryWrapper).stream().map(Models::getModelId).collect(Collectors.toList());
         } else {
             List<Integer> boxIds = boxTransService.list().stream().map(BoxTrans::getId).collect(Collectors.toList());
@@ -112,6 +111,7 @@ public class WarningsServiceImpl extends ServiceImpl<WarningsMapper, Warnings> i
 
             modelIdlist = modelsService.list(queryWrapper).stream().map(Models::getModelId).collect(Collectors.toList());
         }
+
 
         // 如果 modelIdlist 为空，直接返回空结果
         if (CollectionUtils.isEmpty(modelIdlist)) {
