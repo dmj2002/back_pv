@@ -53,23 +53,9 @@ public class ReportsServiceImpl extends ServiceImpl<ReportsMapper, Reports> impl
     public IPage<ReportVO> getReportList(QueryReportsDTO queryReportsDTO) {
         Page<Reports> page = new Page<>(queryReportsDTO.getPageNo(), queryReportsDTO.getPageSize());
         QueryWrapper<Reports> queryWrapper = new QueryWrapper<>();
-        if(queryReportsDTO.getPvFarmId() != null){
-            List<Integer> boxIds = boxTransService.list(new QueryWrapper<BoxTrans>().eq("pv_farm_id", queryReportsDTO.getPvFarmId())).stream().map(BoxTrans::getId).collect(Collectors.toList());
-            if(boxIds.isEmpty()){
-                return new Page<>(page.getCurrent(), page.getSize(), 0);
-            }
-            List<Integer> combinerIds = combinerBoxService.list(new QueryWrapper<CombinerBox>().in("box_id", boxIds)).stream().map(CombinerBox::getId).collect(Collectors.toList());
-            List<Integer> inverterIds = inverterService.list(new QueryWrapper<Inverter>().in("box_id", boxIds)).stream().map(Inverter::getId).collect(Collectors.toList());
-            queryWrapper.nested(wrapper -> {
-                if(!combinerIds.isEmpty()){
-                    wrapper.or().in("device_id", combinerIds).eq("device_type", 1);
-                }
-                if(!inverterIds.isEmpty()){
-                    wrapper.or().in("device_id", inverterIds).eq("device_type", 2);
-                }
-            });
-        }
-        else if(queryReportsDTO.getInverterId() != null){
+
+        // 先判断 inverterId 和 combinerId
+        if (queryReportsDTO.getInverterId() != null) {
             List<Integer> combinerIds = combinerBoxService.list(new QueryWrapper<CombinerBox>().eq("inverter_id", queryReportsDTO.getInverterId())).stream().map(CombinerBox::getId).collect(Collectors.toList());
             queryWrapper.nested(wrapper -> {
                 wrapper.eq("device_id", queryReportsDTO.getInverterId()).eq("device_type", 2);
@@ -77,24 +63,44 @@ public class ReportsServiceImpl extends ServiceImpl<ReportsMapper, Reports> impl
                     wrapper.or().in("device_id", combinerIds).eq("device_type", 1);
                 }
             });
-        }else if(queryReportsDTO.getCombinerBoxId() != null){
+        } else if (queryReportsDTO.getCombinerBoxId() != null) {
             queryWrapper.eq("device_id", queryReportsDTO.getCombinerBoxId())
                     .eq("model_type", 1);
-        }else{
+        } else if (queryReportsDTO.getPvFarmId() != null) { // 最后判断 pvFarmId
+            List<Integer> boxIds = boxTransService.list(new QueryWrapper<BoxTrans>().eq("pv_farm_id", queryReportsDTO.getPvFarmId())).stream().map(BoxTrans::getId).collect(Collectors.toList());
+            if (boxIds.isEmpty()) {
+                return new Page<>(page.getCurrent(), page.getSize(), 0);
+            }
+            List<Integer> combinerIds = combinerBoxService.list(new QueryWrapper<CombinerBox>().in("box_id", boxIds)).stream().map(CombinerBox::getId).collect(Collectors.toList());
+            List<Integer> inverterIds = inverterService.list(new QueryWrapper<Inverter>().in("box_id", boxIds)).stream().map(Inverter::getId).collect(Collectors.toList());
+            queryWrapper.nested(wrapper -> {
+                if (!combinerIds.isEmpty()) {
+                    wrapper.or().in("device_id", combinerIds).eq("device_type", 1);
+                }
+                if (!inverterIds.isEmpty()) {
+                    wrapper.or().in("device_id", inverterIds).eq("device_type", 2);
+                }
+            });
+        } else { // 默认情况
             List<Integer> boxIds = boxTransService.list().stream().map(BoxTrans::getId).collect(Collectors.toList());
             List<Integer> combinerIds = combinerBoxService.list(new QueryWrapper<CombinerBox>().in("box_id", boxIds)).stream().map(CombinerBox::getId).collect(Collectors.toList());
             List<Integer> inverterIds = inverterService.list(new QueryWrapper<Inverter>().in("box_id", boxIds)).stream().map(Inverter::getId).collect(Collectors.toList());
             queryWrapper.nested(wrapper -> {
-                if(!combinerIds.isEmpty()){
+                if (!combinerIds.isEmpty()) {
                     wrapper.or().in("device_id", combinerIds).eq("device_type", 1);
                 }
-                if(!inverterIds.isEmpty()){
+                if (!inverterIds.isEmpty()) {
                     wrapper.or().in("device_id", inverterIds).eq("device_type", 2);
                 }
             });
         }
-        queryWrapper.ge("initial_time",queryReportsDTO.getStartTime()).le("initial_time",queryReportsDTO.getEndTime());
+
+        // 添加时间范围条件
+        queryWrapper.ge("initial_time", queryReportsDTO.getStartTime()).le("initial_time", queryReportsDTO.getEndTime());
+
+        // 查询分页数据
         Page<Reports> reportsPage = reportsMapper.selectPage(page, queryWrapper);
+
         // 设置设备名称
         List<ReportVO> reportVOList = reportsPage.getRecords().stream().map(report -> {
             ReportVO reportVO = new ReportVO();
@@ -112,6 +118,7 @@ public class ReportsServiceImpl extends ServiceImpl<ReportsMapper, Reports> impl
             reportVO.setEmployeeName(employee != null ? employee.getEmployeeName() : "未知员工");
             return reportVO;
         }).collect(Collectors.toList());
+
         // 封装成 Page<ReportVO> 对象
         Page<ReportVO> reportVOPage = new Page<>();
         reportVOPage.setCurrent(reportsPage.getCurrent());
@@ -120,4 +127,5 @@ public class ReportsServiceImpl extends ServiceImpl<ReportsMapper, Reports> impl
         reportVOPage.setRecords(reportVOList);
         return reportVOPage;
     }
+
 }
