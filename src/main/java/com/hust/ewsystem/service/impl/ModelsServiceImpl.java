@@ -101,15 +101,15 @@ public class ModelsServiceImpl extends ServiceImpl<ModelsMapper, Models> impleme
             }
             switch (modelAddDTO.getDeviceType()) {
                 case 1: // 汇流箱
-                    deviceList = inverterService.list(new QueryWrapper<Inverter>().in("box_id", boxIds))
-                            .stream()
-                            .map(Inverter::getId)
-                            .collect(Collectors.toList());
-                    break;
-                case 2: // 逆变器
                     deviceList = combinerBoxService.list(new QueryWrapper<CombinerBox>().in("box_id", boxIds))
                             .stream()
                             .map(CombinerBox::getId)
+                            .collect(Collectors.toList());
+                    break;
+                case 2: // 逆变器
+                    deviceList = inverterService.list(new QueryWrapper<Inverter>().in("box_id", boxIds))
+                            .stream()
+                            .map(Inverter::getId)
                             .collect(Collectors.toList());
                     break;
                 default:
