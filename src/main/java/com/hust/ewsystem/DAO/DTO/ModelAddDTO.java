@@ -18,7 +18,7 @@ public class ModelAddDTO {
 
     private Integer pvFarmId;
 
-    private Boolean isAll;
+    private Integer isAll;
 
     private Integer deviceType;
 
