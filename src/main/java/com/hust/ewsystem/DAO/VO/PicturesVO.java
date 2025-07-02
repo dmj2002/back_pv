@@ -1,6 +1,7 @@
 package com.hust.ewsystem.DAO.VO;
 
 import com.hust.ewsystem.DAO.DTO.StandPointDTO;
+import com.hust.ewsystem.DAO.PO.CommonData;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;
@@ -23,4 +24,6 @@ public class PicturesVO {
     private String picName;
 
     private List<StandPointDTO> points;
+
+    private List<CommonData> calculateValue;
 }

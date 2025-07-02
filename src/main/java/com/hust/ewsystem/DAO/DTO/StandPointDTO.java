@@ -14,6 +14,8 @@ public class StandPointDTO {
 
     private Integer pointId;
 
+    private String pointLabel;
+
     private String pointDescription;
 
     private List<CommonData> pointValue;
