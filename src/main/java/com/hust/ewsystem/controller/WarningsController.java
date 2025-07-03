@@ -24,6 +24,7 @@ import javax.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.sql.Timestamp;
 import java.util.stream.Collectors;
 
 import static com.hust.ewsystem.service.impl.ModelsServiceImpl.getTableName;
@@ -307,8 +308,10 @@ public class WarningsController {
             List<CommonData> valueList = new ArrayList<>();
             for(Map<String, Object> map : mapList) {
                 CommonData commonData = new CommonData();
-                commonData.setDatetime((LocalDateTime) map.get("datetime"));
-                commonData.setValue((Double) map.get(pointLabel));
+                LocalDateTime datetime = ((Timestamp) map.get("datetime")).toLocalDateTime();
+                commonData.setDatetime(datetime);
+                Double value = Double.valueOf(map.get(pointLabel).toString());
+                commonData.setValue(value);
                 valueList.add(commonData);
             }
             standPointDTO.setPointValue(valueList);
