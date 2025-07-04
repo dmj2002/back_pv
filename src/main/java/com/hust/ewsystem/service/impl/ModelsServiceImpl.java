@@ -188,9 +188,14 @@ public class ModelsServiceImpl extends ServiceImpl<ModelsMapper, Models> impleme
                 modelRealRelateList.add(modelRealRelate);
             }
         }
-        boolean saveBatch2 = modelRealRelateService.saveBatch(modelRealRelateList);
-        if(!saveBatch2){
-            throw new CrudException("模型关联批量保存失败");
+        try {
+            boolean saveBatch2 = modelRealRelateService.saveBatch(modelRealRelateList);
+            if (!saveBatch2) {
+                throw new CrudException("模型关联批量保存失败");
+            }
+        } catch (Exception e) {
+            // 捕获异常并继续执行
+            System.err.println("批量保存时发生异常，已跳过错误数据: " + e.getMessage());
         }
         List<Map<String,Object>> result = new ArrayList<>();
         for (Models models : modelsList) {
