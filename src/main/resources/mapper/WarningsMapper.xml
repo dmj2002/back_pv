@@ -4,7 +4,14 @@
 
     <resultMap id="standPointMap" type="com.hust.ewsystem.DAO.VO.StandPointVO">
         <result property="modelType" column="model_type"/>
+        <!-- 映射 points 集合 -->
         <collection property="points" ofType="com.hust.ewsystem.DAO.PO.StandPoint">
+            <!-- 主键映射 -->
+            <id property="pointId" column="point_id"/>
+            <result property="pointLabel" column="point_label"/>
+            <result property="pointDescription" column="point_description"/>
+            <result property="pointUnit" column="point_unit"/>
+            <result property="pointType" column="point_type"/>
         </collection>
     </resultMap>
     <resultMap id="WarningResultMap" type="com.hust.ewsystem.DAO.VO.WarningsVO">
