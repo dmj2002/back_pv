@@ -32,6 +32,12 @@
         <result column="model_type" property="deviceType"/>
         <result column="device_name" property="deviceName"/>
     </resultMap>
+    <resultMap id="DeviceInfoMap" type="com.hust.ewsystem.DAO.VO.DeviceVO">
+        <result column="device_id" property="deviceId"/>
+        <result column="model_type" property="deviceType"/>
+    </resultMap>
+
+
 
     <select id="getStandPointByWarningId" resultMap = "standPointMap">
         SELECT sp.*,m.model_type
@@ -40,6 +46,13 @@
         JOIN algorithms a ON m.algorithm_id = a.algorithm_id
         JOIN algorithm_stand_relate asr ON a.algorithm_id = asr.algorithm_id
         JOIN stand_point sp ON asr.stand_point_id = sp.point_id
+        where w.warning_id = #{warningId}
+    </select>
+
+    <select id="getDeviceInfoByWarningId" resultMap = "DeviceInfoMap">
+        SELECT m.device_id,m.model_type
+        FROM warnings w
+        JOIN models m ON w.model_id = m.model_id
         where w.warning_id = #{warningId}
     </select>
 

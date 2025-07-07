@@ -2,18 +2,13 @@ package com.hust.ewsystem.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.hust.ewsystem.DAO.DTO.FarmDTO;
-import com.hust.ewsystem.DAO.PO.BoxTrans;
-import com.hust.ewsystem.DAO.PO.CombinerBox;
-import com.hust.ewsystem.DAO.PO.Inverter;
-import com.hust.ewsystem.DAO.PO.StandPoint;
+import com.hust.ewsystem.DAO.PO.*;
 import com.hust.ewsystem.DAO.VO.DeviceGetVO;
+import com.hust.ewsystem.DAO.VO.DeviceVO;
 import com.hust.ewsystem.DAO.VO.StandPointVO;
 import com.hust.ewsystem.common.result.EwsResult;
 import com.hust.ewsystem.mapper.WarningsMapper;
-import com.hust.ewsystem.service.BoxTransService;
-import com.hust.ewsystem.service.CombinerBoxService;
-import com.hust.ewsystem.service.InverterService;
-import com.hust.ewsystem.service.PvFarmService;
+import com.hust.ewsystem.service.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -38,6 +33,8 @@ public class DeviceController {
     private final CombinerBoxService combinerBoxService;
 
     private final WarningsMapper warningsMapper;
+
+    private final RealPointService realPointService;
 
 
     @GetMapping("/list")
@@ -83,15 +80,37 @@ public class DeviceController {
                 return EwsResult.error("不支持的电站类型");
         }
     }
+//    @GetMapping("/getDeviceInfo")
+//    public EwsResult<?> getDeviceInfo(@RequestParam(value = "warningId") Integer warningId){
+//        StandPointVO standPointByWarningId = warningsMapper.getStandPointByWarningId(warningId);
+//        if (standPointByWarningId == null) {
+//            return EwsResult.error("查询失败");
+//        }
+//        Integer modelType = standPointByWarningId.getModelType();
+//        List<StandPoint> filterPointList = standPointByWarningId.getPoints().stream().filter(point -> (modelType == 0 && point.getPointType() == 0) || (modelType != 0 && (point.getPointType() == modelType || point.getPointType() == 0))).collect(Collectors.toList());
+//
+//        return EwsResult.OK("查询成功", filterPointList);
+//    }
     @GetMapping("/getDeviceInfo")
     public EwsResult<?> getDeviceInfo(@RequestParam(value = "warningId") Integer warningId){
-        StandPointVO standPointByWarningId = warningsMapper.getStandPointByWarningId(warningId);
-        if (standPointByWarningId == null) {
+        DeviceVO deviceInfoByWarningId = warningsMapper.getDeviceInfoByWarningId(warningId);
+        if (deviceInfoByWarningId == null) {
             return EwsResult.error("查询失败");
         }
-        Integer modelType = standPointByWarningId.getModelType();
-        List<StandPoint> filterPointList = standPointByWarningId.getPoints().stream().filter(point -> (modelType == 0 && point.getPointType() == 0) || (modelType != 0 && (point.getPointType() == modelType || point.getPointType() == 0))).collect(Collectors.toList());
-        return EwsResult.OK("查询成功", filterPointList);
+        Integer deviceId = deviceInfoByWarningId.getDeviceId();
+        Integer deviceType = deviceInfoByWarningId.getDeviceType();
+        Integer pvFarmId = null;
+        if(deviceType == 1){
+            //获取汇流箱id
+            Integer boxId = combinerBoxService.getById(deviceId).getBoxId();
+            pvFarmId = boxTransService.getById(boxId).getPvFarmId();
+        }else if(deviceType == 2){
+            //获取逆变器id
+            Integer boxId = inverterService.getById(deviceId).getBoxId();
+            pvFarmId = boxTransService.getById(boxId).getPvFarmId();
+        }
+        List<RealPoint> list = realPointService.list(new QueryWrapper<RealPoint>().eq("pv_farm_id", pvFarmId).in("point_type", deviceType, 0));
+        return EwsResult.OK("查询成功", list);
     }
     @GetMapping("/getDeviceName")
     public EwsResult<?> getDeviceName(@RequestParam(value = "deviceId") Integer deviceId,
