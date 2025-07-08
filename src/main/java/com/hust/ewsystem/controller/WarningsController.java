@@ -70,7 +70,7 @@ public class WarningsController {
                                        @RequestParam(value = "startDate") String startDate,
                                        @RequestParam(value = "endDate", required = false) String endDate,
                                        @RequestParam(value = "warningLevel", required = false) Integer warningLevel,
-                                       @RequestParam(value = "companyId") Integer companyId,
+                                       @RequestParam(value = "companyId", required = false) Integer companyId,
                                        @RequestParam(value = "pvFarmId", required = false) Integer pvFarmId,
                                        @RequestParam(value = "inverterId", required = false) Integer inverterId,
                                        @RequestParam(value = "combinerBoxId", required = false) Integer combinerBoxId){
@@ -80,7 +80,7 @@ public class WarningsController {
     public EwsResult<?> getWarningList(@RequestParam(value = "page") int page,
                                        @RequestParam(value = "pageSize") int pageSize,
                                        @RequestParam(value = "warningLevel", required = false) Integer warningLevel,
-                                       @RequestParam(value = "companyId") Integer companyId,
+                                       @RequestParam(value = "companyId",required = false) Integer companyId,
                                        @RequestParam(value = "pvFarmId", required = false) Integer pvFarmId,
                                        @RequestParam(value = "inverterId", required = false) Integer inverterId,
                                        @RequestParam(value = "combinerBoxId", required = false) Integer combinerBoxId){
