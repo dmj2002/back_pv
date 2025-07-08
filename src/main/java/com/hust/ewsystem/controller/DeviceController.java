@@ -16,7 +16,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
@@ -35,6 +37,8 @@ public class DeviceController {
     private final WarningsMapper warningsMapper;
 
     private final RealPointService realPointService;
+
+    private final StandRealRelateService standRealRelateService;
 
 
     @GetMapping("/list")
@@ -109,8 +113,14 @@ public class DeviceController {
             Integer boxId = inverterService.getById(deviceId).getBoxId();
             pvFarmId = boxTransService.getById(boxId).getPvFarmId();
         }
-        List<RealPoint> list = realPointService.list(new QueryWrapper<RealPoint>().eq("pv_farm_id", pvFarmId).in("point_type", deviceType, 0));
-        return EwsResult.OK("查询成功", list);
+        Map<RealPoint, Integer> realPointStandPointMap = new HashMap<>();
+        realPointService.list(new QueryWrapper<RealPoint>().eq("pv_farm_id", pvFarmId).in("point_type", deviceType, 0)).stream().forEach(
+                realPoint -> {
+                    Integer standPointId = standRealRelateService.getOne(new QueryWrapper<StandRealRelate>().eq("real_point_id", realPoint.getPointId())).getStandPointId();
+                    realPointStandPointMap.put(realPoint, standPointId);
+                }
+        );
+        return EwsResult.OK("查询成功", realPointStandPointMap);
     }
     @GetMapping("/getDeviceName")
     public EwsResult<?> getDeviceName(@RequestParam(value = "deviceId") Integer deviceId,
