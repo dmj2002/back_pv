@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
+import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -48,7 +49,7 @@ public class RealPointServiceImpl extends ServiceImpl<RealPointMapper, RealPoint
                 List<Map<String, Object>> mapList = commonDataMapper.selectDataByTime(tableName, pointLabelList, startDate, endDate);
                 for(Map<String, Object> map : mapList) {
                     CommonData commonData = new CommonData();
-                    commonData.setDatetime((LocalDateTime) map.get("datetime"));
+                    commonData.setDatetime(((Timestamp) map.get("datetime")).toLocalDateTime());
                     commonData.setValue((Double) map.get(pointLabel));
                     valueList.add(commonData);
                 }

@@ -16,13 +16,12 @@ import java.util.List;
 @Accessors(chain = true)
 public class QueryWarnDetailsDTO {
 
-
-
     private List<Integer> pointIdList;
 
 
     private Integer deviceId;
 
+    private Integer deviceType;
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private Date startDate;

@@ -269,6 +269,18 @@ public class WarningsServiceImpl extends ServiceImpl<WarningsMapper, Warnings> i
         QueryWrapper<RealPoint> realPointQueryWrapper;
         List<Map<Integer, RealPoint>> relPointAndLableList = new ArrayList<>();
         Map<Integer,RealPoint> relPointAndLableMap;
+        Integer deviceId = queryWarnDetailsDTO.getDeviceId();
+        Integer deviceType = queryWarnDetailsDTO.getDeviceType();
+        Integer pvFarmId = null;
+        if(deviceType == 1){
+            //获取汇流箱id
+            Integer boxId = combinerBoxService.getById(deviceId).getBoxId();
+            pvFarmId = boxTransService.getById(boxId).getPvFarmId();
+        }else if(deviceType == 2){
+            //获取逆变器id
+            Integer boxId = inverterService.getById(deviceId).getBoxId();
+            pvFarmId = boxTransService.getById(boxId).getPvFarmId();
+        }
         for (Integer standPointId : standPointIdList) {
             StandPoint standPoint = standPointMapper.selectById(standPointId);
             queryWrapper = new QueryWrapper<>();
@@ -283,7 +295,13 @@ public class WarningsServiceImpl extends ServiceImpl<WarningsMapper, Warnings> i
                 realPointList.add(standRealRelate.getRealPointId());
             }
             realPointQueryWrapper = new QueryWrapper<>();
-            realPointQueryWrapper.lambda().in(RealPoint::getPointId,realPointList).eq(RealPoint::getDeviceId,queryWarnDetailsDTO.getDeviceId()).eq(RealPoint::getPointType,standPoint.getPointType());
+            if(standPoint.getPointType() == 0){
+                // 如果是标准测点类型为0,则查询对应的真实测点
+                realPointQueryWrapper.lambda().in(RealPoint::getPointId,realPointList).eq(RealPoint::getDeviceId,pvFarmId).eq(RealPoint::getPointType,standPoint.getPointType());
+            }else{
+                // 如果是标准测点类型为1,则查询对应的真实测点
+                realPointQueryWrapper.lambda().in(RealPoint::getPointId,realPointList).eq(RealPoint::getDeviceId,deviceId).eq(RealPoint::getPointType,standPoint.getPointType());
+            }
             RealPoint realPoint = realPointService.getOne(realPointQueryWrapper);
             if (Objects.isNull(realPoint)){
                 String realIdList = StringUtils.join(realPointList, ",");
