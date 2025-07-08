@@ -13,6 +13,7 @@ import com.hust.ewsystem.mapper.CommonDataMapper;
 import com.hust.ewsystem.mapper.RealPointMapper;
 import com.hust.ewsystem.service.RealPointService;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
@@ -32,6 +33,7 @@ public class RealPointServiceImpl extends ServiceImpl<RealPointMapper, RealPoint
 
     @Override
     @DS("slave")
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public List<TrendDataDTO> getRealPointValueList(List<Map<Integer, RealPoint>> pointLabels, QueryWarnDetailsDTO queryWarnDetailsDTO) {
         List<CommonData> valueList = new ArrayList<>();
         List<TrendDataDTO> result = new LinkedList<>();

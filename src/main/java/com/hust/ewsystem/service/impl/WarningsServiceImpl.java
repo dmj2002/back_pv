@@ -294,7 +294,6 @@ public class WarningsServiceImpl extends ServiceImpl<WarningsMapper, Warnings> i
             relPointAndLableMap.put(realPoint.getPointId(), realPoint);
             relPointAndLableList.add(relPointAndLableMap);
         }
-
         // 查询测点值
         List<TrendDataDTO> realPointValueList = realPointService.getRealPointValueList(relPointAndLableList, queryWarnDetailsDTO);
         return EwsResult.OK(realPointValueList);
