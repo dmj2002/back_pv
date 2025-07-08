@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @RestController
@@ -132,7 +133,7 @@ public class DeviceController {
             }
         }
         List<ExtendedRealPoint> extendedList = list.stream()
-                .filter(realPoint -> realPoint.getPointType() == 0 ||(realPoint.getPointType() == deviceType && realPoint.getDeviceId() == deviceId))
+                .filter(realPoint -> realPoint.getPointType() == 0 ||(realPoint.getPointType().equals(deviceType) && Objects.equals(realPoint.getDeviceId(), deviceId)))
                 .map(realPoint -> {
                     ExtendedRealPoint extendedRealPoint = new ExtendedRealPoint();
                     BeanUtils.copyProperties(realPoint, extendedRealPoint);
