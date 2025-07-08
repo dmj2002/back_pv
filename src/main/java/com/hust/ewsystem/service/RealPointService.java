@@ -11,5 +11,5 @@ import java.util.Map;
 
 public interface RealPointService extends IService<RealPoint> {
 
-    List<TrendDataDTO> getRealPointValueList(List<Map<Integer, RealPoint>> relPointAndLableList, QueryWarnDetailsDTO queryWarnDetailsDTO);
+    List<TrendDataDTO> getRealPointValueList(List<Map<Integer, RealPoint>> relPointAndLableList, QueryWarnDetailsDTO queryWarnDetailsDTO,Integer pvFarmId);
 }

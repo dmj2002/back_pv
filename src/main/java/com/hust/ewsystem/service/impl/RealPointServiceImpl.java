@@ -22,6 +22,7 @@ import java.time.LocalDateTime;
 import java.util.*;
 
 import static com.hust.ewsystem.service.impl.ModelsServiceImpl.getTableName;
+import static com.hust.ewsystem.service.impl.ModelsServiceImpl.getdivceName;
 
 
 @Service
@@ -35,7 +36,7 @@ public class RealPointServiceImpl extends ServiceImpl<RealPointMapper, RealPoint
     @Override
     @DS("slave")
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public List<TrendDataDTO> getRealPointValueList(List<Map<Integer, RealPoint>> pointLabels, QueryWarnDetailsDTO queryWarnDetailsDTO) {
+    public List<TrendDataDTO> getRealPointValueList(List<Map<Integer, RealPoint>> pointLabels, QueryWarnDetailsDTO queryWarnDetailsDTO, Integer pvFarmId) {
         List<CommonData> valueList = new ArrayList<>();
         List<TrendDataDTO> result = new LinkedList<>();
         String startDate = DateUtil.dateTimeToDateString(queryWarnDetailsDTO.getStartDate(), CommonConstant.DATETIME_FORMAT_1);
@@ -43,7 +44,7 @@ public class RealPointServiceImpl extends ServiceImpl<RealPointMapper, RealPoint
         TrendDataDTO trendDataDTO;
         for (Map<Integer, RealPoint> point : pointLabels) {
             for (Map.Entry<Integer, RealPoint> entry : point.entrySet()) {
-                String tableName = getTableName(entry.getValue().getPointType()) + "_" + queryWarnDetailsDTO.getDeviceId();
+                String tableName = getTableName(entry.getValue().getPointType()) + "_" + getdivceName(entry.getValue().getPointType(), Collections.singletonList(entry.getValue()));
                 String pointLabel = entry.getValue().getPointLabel().toLowerCase();
                 List<String> pointLabelList = Collections.singletonList(pointLabel);
                 List<Map<String, Object>> mapList = commonDataMapper.selectDataByTime(tableName, pointLabelList, startDate, endDate);
