@@ -36,13 +36,13 @@ public class RealPointServiceImpl extends ServiceImpl<RealPointMapper, RealPoint
     @DS("slave")
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public List<TrendDataDTO> getRealPointValueList(List<Map<Integer, RealPoint>> pointLabels, QueryWarnDetailsDTO queryWarnDetailsDTO, Integer pvFarmId) {
-        List<CommonData> valueList = new ArrayList<>();
         List<TrendDataDTO> result = new LinkedList<>();
         String startDate = DateUtil.dateTimeToDateString(queryWarnDetailsDTO.getStartDate(), CommonConstant.DATETIME_FORMAT_1);
         String endDate = DateUtil.dateTimeToDateString(queryWarnDetailsDTO.getEndDate(), CommonConstant.DATETIME_FORMAT_1);
         TrendDataDTO trendDataDTO;
         for (Map<Integer, RealPoint> point : pointLabels) {
             for (Map.Entry<Integer, RealPoint> entry : point.entrySet()) {
+                List<CommonData> valueList = new ArrayList<>();
                 String tableName = getTableName(entry.getValue().getPointType()) + "_" + getdeivceName(entry.getValue().getPointType(), Collections.singletonList(entry.getValue()));
                 String pointLabel = entry.getValue().getPointLabel().toLowerCase();
                 List<String> pointLabelList = Collections.singletonList(pointLabel);
