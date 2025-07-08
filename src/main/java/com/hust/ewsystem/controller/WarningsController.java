@@ -355,7 +355,7 @@ public class WarningsController {
                     .map(voltageData -> {
                         Double currentValue = currentValueMap.get(voltageData.getDatetime());
                         Double powerValue = null;
-                        if(operations.equals("div") && currentValue == 0){
+                        if(operations.equals("div") && currentValue != 0){
                             powerValue = voltageData.getValue() / currentValue;
                         }
                         else if(operations.equals("multiply")){
