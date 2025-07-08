@@ -131,12 +131,14 @@ public class DeviceController {
                 this.standPointId = standPointId;
             }
         }
-        List<ExtendedRealPoint> extendedList = list.stream().map(realPoint -> {
-            ExtendedRealPoint extendedRealPoint = new ExtendedRealPoint();
-            BeanUtils.copyProperties(realPoint, extendedRealPoint);
-            extendedRealPoint.setStandPointId(standRealRelateMap.get(realPoint.getPointId()));
-            return extendedRealPoint;
-        }).collect(Collectors.toList());
+        List<ExtendedRealPoint> extendedList = list.stream()
+                .filter(realPoint -> realPoint.getPointType() == 0 ||(realPoint.getPointType() == deviceType && realPoint.getDeviceId() == deviceId))
+                .map(realPoint -> {
+                    ExtendedRealPoint extendedRealPoint = new ExtendedRealPoint();
+                    BeanUtils.copyProperties(realPoint, extendedRealPoint);
+                    extendedRealPoint.setStandPointId(standRealRelateMap.get(realPoint.getPointId()));
+                    return extendedRealPoint;
+                }).collect(Collectors.toList());
         return EwsResult.OK("查询成功", extendedList);
     }
     @GetMapping("/getDeviceName")
