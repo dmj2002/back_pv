@@ -69,22 +69,19 @@ public class WarningsServiceImpl extends ServiceImpl<WarningsMapper, Warnings> i
         } else if (inverterId != null) {
             List<Integer> combinerIds = combinerBoxService.list(new QueryWrapper<CombinerBox>().eq("inverter_id", inverterId))
                     .stream().map(CombinerBox::getId).collect(Collectors.toList());
-
             // 构建条件：避免 device_id IN () 的情况
             queryWrapper.nested(wrapper -> wrapper.eq("device_id", inverterId).eq("model_type", 2));
             if (!CollectionUtils.isEmpty(combinerIds)) {
                 queryWrapper.or(wrapper -> wrapper.in("device_id", combinerIds).eq("model_type", 1));
             }
-
             modelIdlist = modelsService.list(queryWrapper).stream().map(Models::getModelId).collect(Collectors.toList());
-        } else if (pvFarmId != null) {
+        }else if (pvFarmId != null) {
             List<Integer> boxIds = boxTransService.list(new QueryWrapper<BoxTrans>().eq("pv_farm_id", pvFarmId))
                     .stream().map(BoxTrans::getId).collect(Collectors.toList());
             List<Integer> combinerIds = combinerBoxService.list(new QueryWrapper<CombinerBox>().in("box_id", boxIds))
                     .stream().map(CombinerBox::getId).collect(Collectors.toList());
             List<Integer> inverterIds = inverterService.list(new QueryWrapper<Inverter>().in("box_id", boxIds))
                     .stream().map(Inverter::getId).collect(Collectors.toList());
-
             // 构建条件：避免 device_id IN () 的情况
             if (!CollectionUtils.isEmpty(inverterIds)) {
                 queryWrapper.nested(wrapper -> wrapper.in("device_id", inverterIds).eq("model_type", 2));
@@ -92,9 +89,24 @@ public class WarningsServiceImpl extends ServiceImpl<WarningsMapper, Warnings> i
             if (!CollectionUtils.isEmpty(combinerIds)) {
                 queryWrapper.or(wrapper -> wrapper.in("device_id", combinerIds).eq("model_type", 1));
             }
-
             modelIdlist = modelsService.list(queryWrapper).stream().map(Models::getModelId).collect(Collectors.toList());
-        } else {
+        } else if(companyId != null){
+            List<Integer> pvFarmIds = pvFarmService.list(new QueryWrapper<PvFarm>().eq("company_id", companyId)).stream().map(PvFarm::getId).collect(Collectors.toList());
+            List<Integer> boxIds = boxTransService.list(new QueryWrapper<BoxTrans>().in("pv_farm_id", pvFarmIds))
+                    .stream().map(BoxTrans::getId).collect(Collectors.toList());
+            List<Integer> combinerIds = combinerBoxService.list(new QueryWrapper<CombinerBox>().in("box_id", boxIds))
+                    .stream().map(CombinerBox::getId).collect(Collectors.toList());
+            List<Integer> inverterIds = inverterService.list(new QueryWrapper<Inverter>().in("box_id", boxIds))
+                    .stream().map(Inverter::getId).collect(Collectors.toList());
+            // 构建条件：避免 device_id IN () 的情况
+            if (!CollectionUtils.isEmpty(inverterIds)) {
+                queryWrapper.nested(wrapper -> wrapper.in("device_id", inverterIds).eq("model_type", 2));
+            }
+            if (!CollectionUtils.isEmpty(combinerIds)) {
+                queryWrapper.or(wrapper -> wrapper.in("device_id", combinerIds).eq("model_type", 1));
+            }
+            modelIdlist = modelsService.list(queryWrapper).stream().map(Models::getModelId).collect(Collectors.toList());
+        }else {
             List<Integer> boxIds = boxTransService.list().stream().map(BoxTrans::getId).collect(Collectors.toList());
             List<Integer> combinerIds = combinerBoxService.list(new QueryWrapper<CombinerBox>().in("box_id", boxIds))
                     .stream().map(CombinerBox::getId).collect(Collectors.toList());
@@ -142,7 +154,6 @@ public class WarningsServiceImpl extends ServiceImpl<WarningsMapper, Warnings> i
         if (warningLevel != null) {
             queryWrapper2.eq("warning_level", warningLevel);
         }
-
         // 分页查询
         Page<Warnings> warningsPage = new Page<>(page, pageSize);
         Page<Warnings> page1 = page(warningsPage, queryWrapper2);
@@ -234,7 +245,24 @@ public class WarningsServiceImpl extends ServiceImpl<WarningsMapper, Warnings> i
             queryWrapper.eq("device_id", combinerBoxId)
                     .eq("model_type", 1);
             modelIdlist = modelsService.list(queryWrapper).stream().map(Models::getModelId).collect(Collectors.toList());
-        }else{
+        }else if(companyId != null){
+            List<Integer> pvFarmIds = pvFarmService.list(new QueryWrapper<PvFarm>().eq("company_id", companyId)).stream().map(PvFarm::getId).collect(Collectors.toList());
+            List<Integer> boxIds = boxTransService.list(new QueryWrapper<BoxTrans>().in("pv_farm_id", pvFarmIds))
+                    .stream().map(BoxTrans::getId).collect(Collectors.toList());
+            List<Integer> combinerIds = combinerBoxService.list(new QueryWrapper<CombinerBox>().in("box_id", boxIds))
+                    .stream().map(CombinerBox::getId).collect(Collectors.toList());
+            List<Integer> inverterIds = inverterService.list(new QueryWrapper<Inverter>().in("box_id", boxIds))
+                    .stream().map(Inverter::getId).collect(Collectors.toList());
+            // 构建条件：避免 device_id IN () 的情况
+            if (!CollectionUtils.isEmpty(inverterIds)) {
+                queryWrapper.nested(wrapper -> wrapper.in("device_id", inverterIds).eq("model_type", 2));
+            }
+            if (!CollectionUtils.isEmpty(combinerIds)) {
+                queryWrapper.or(wrapper -> wrapper.in("device_id", combinerIds).eq("model_type", 1));
+            }
+            modelIdlist = modelsService.list(queryWrapper).stream().map(Models::getModelId).collect(Collectors.toList());
+        }
+        else{
             List<Integer> boxIds = boxTransService.list().stream().map(BoxTrans::getId).collect(Collectors.toList());
             List<Integer> combinerIds = combinerBoxService.list(new QueryWrapper<CombinerBox>().in("box_id", boxIds)).stream().map(CombinerBox::getId).collect(Collectors.toList());
             List<Integer> inverterIds = inverterService.list(new QueryWrapper<Inverter>().in("box_id", boxIds)).stream().map(Inverter::getId).collect(Collectors.toList());
