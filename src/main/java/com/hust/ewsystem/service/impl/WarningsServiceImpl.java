@@ -75,7 +75,7 @@ public class WarningsServiceImpl extends ServiceImpl<WarningsMapper, Warnings> i
                 queryWrapper.or(wrapper -> wrapper.in("device_id", combinerIds).eq("model_type", 1));
             }
             modelIdlist = modelsService.list(queryWrapper).stream().map(Models::getModelId).collect(Collectors.toList());
-        }else if (pvFarmId != null) {
+        }else if (pvFarmId != null && pvFarmId != 0) {
             List<Integer> boxIds = boxTransService.list(new QueryWrapper<BoxTrans>().eq("pv_farm_id", pvFarmId))
                     .stream().map(BoxTrans::getId).collect(Collectors.toList());
             List<Integer> combinerIds = combinerBoxService.list(new QueryWrapper<CombinerBox>().in("box_id", boxIds))
