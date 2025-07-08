@@ -18,11 +18,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.sql.Timestamp;
-import java.time.LocalDateTime;
 import java.util.*;
 
 import static com.hust.ewsystem.service.impl.ModelsServiceImpl.getTableName;
-import static com.hust.ewsystem.service.impl.ModelsServiceImpl.getdivceName;
+import static com.hust.ewsystem.service.impl.ModelsServiceImpl.getdeivceName;
 
 
 @Service
@@ -44,14 +43,14 @@ public class RealPointServiceImpl extends ServiceImpl<RealPointMapper, RealPoint
         TrendDataDTO trendDataDTO;
         for (Map<Integer, RealPoint> point : pointLabels) {
             for (Map.Entry<Integer, RealPoint> entry : point.entrySet()) {
-                String tableName = getTableName(entry.getValue().getPointType()) + "_" + getdivceName(entry.getValue().getPointType(), Collections.singletonList(entry.getValue()));
+                String tableName = getTableName(entry.getValue().getPointType()) + "_" + getdeivceName(entry.getValue().getPointType(), Collections.singletonList(entry.getValue()));
                 String pointLabel = entry.getValue().getPointLabel().toLowerCase();
                 List<String> pointLabelList = Collections.singletonList(pointLabel);
                 List<Map<String, Object>> mapList = commonDataMapper.selectDataByTime(tableName, pointLabelList, startDate, endDate);
                 for(Map<String, Object> map : mapList) {
                     CommonData commonData = new CommonData();
                     commonData.setDatetime(((Timestamp) map.get("datetime")).toLocalDateTime());
-                    commonData.setValue((Double) map.get(pointLabel));
+                    commonData.setValue(((Float) map.get(pointLabel)).doubleValue());
                     valueList.add(commonData);
                 }
                 trendDataDTO = new TrendDataDTO();
