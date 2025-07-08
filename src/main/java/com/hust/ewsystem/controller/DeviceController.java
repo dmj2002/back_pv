@@ -10,13 +10,13 @@ import com.hust.ewsystem.common.result.EwsResult;
 import com.hust.ewsystem.mapper.WarningsMapper;
 import com.hust.ewsystem.service.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.BeanUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -113,14 +113,31 @@ public class DeviceController {
             Integer boxId = inverterService.getById(deviceId).getBoxId();
             pvFarmId = boxTransService.getById(boxId).getPvFarmId();
         }
-        Map<RealPoint, Integer> realPointStandPointMap = new HashMap<>();
-        realPointService.list(new QueryWrapper<RealPoint>().eq("pv_farm_id", pvFarmId).in("point_type", deviceType, 0)).stream().forEach(
-                realPoint -> {
-                    Integer standPointId = standRealRelateService.getOne(new QueryWrapper<StandRealRelate>().eq("real_point_id", realPoint.getPointId())).getStandPointId();
-                    realPointStandPointMap.put(realPoint, standPointId);
-                }
-        );
-        return EwsResult.OK("查询成功", realPointStandPointMap);
+        List<RealPoint> list = realPointService.list(new QueryWrapper<RealPoint>().eq("pv_farm_id", pvFarmId).in("point_type", deviceType, 0));
+        Map<Integer, Integer> standRealRelateMap = standRealRelateService.list(
+                new QueryWrapper<StandRealRelate>().in("real_point_id", list.stream().map(RealPoint::getPointId).collect(Collectors.toList()))
+        ).stream().collect(Collectors.toMap(
+                StandRealRelate::getRealPointId,
+                StandRealRelate::getStandPointId
+        ));
+        class ExtendedRealPoint extends RealPoint {
+            private Integer standPointId;
+
+            public Integer getStandPointId() {
+                return standPointId;
+            }
+
+            public void setStandPointId(Integer standPointId) {
+                this.standPointId = standPointId;
+            }
+        }
+        List<ExtendedRealPoint> extendedList = list.stream().map(realPoint -> {
+            ExtendedRealPoint extendedRealPoint = new ExtendedRealPoint();
+            BeanUtils.copyProperties(realPoint, extendedRealPoint);
+            extendedRealPoint.setStandPointId(standRealRelateMap.get(realPoint.getPointId()));
+            return extendedRealPoint;
+        }).collect(Collectors.toList());
+        return EwsResult.OK("查询成功", extendedList);
     }
     @GetMapping("/getDeviceName")
     public EwsResult<?> getDeviceName(@RequestParam(value = "deviceId") Integer deviceId,
