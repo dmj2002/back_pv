@@ -26,7 +26,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.ibatis.exceptions.TooManyResultsException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -75,11 +77,10 @@ public class ModelsServiceImpl extends ServiceImpl<ModelsMapper, Models> impleme
 
     private final InverterService inverterService;
 
+    @Autowired
+    @Lazy
     private WarningsService warningService;
 
-    public void setWarningsService(WarningsService warningsService) {
-        this.warningService = warningsService;
-    }
 
     // 任务状态
     private final Map<String, ScheduledFuture<?>> taskMap = new ConcurrentHashMap<>();
@@ -621,7 +622,7 @@ public class ModelsServiceImpl extends ServiceImpl<ModelsMapper, Models> impleme
                 //准备setting.json
                 File settingFile = new File(taskDir, "setting.json");
                 JSONObject settings = new JSONObject();
-                settings.put("modelPath", pythonFilePath + "/" + modelLabel);
+                settings.put("modelPath", pythonFilePath + "/alg/" + algorithmLabel);
                 settings.put("trainDataPath", pythonFilePath + "/" + modelLabel + "/train.csv");
                 settings.put("predictDataPath", pythonFilePath + "/task_logs/" + taskLabel + "/predict.csv");
                 settings.put("resultDataPath", pythonFilePath + "/task_logs/" + taskLabel + "/result.json");
@@ -766,7 +767,7 @@ public class ModelsServiceImpl extends ServiceImpl<ModelsMapper, Models> impleme
             //准备setting.json
             File settingFile = new File(taskDir, "setting.json");
             JSONObject settings = new JSONObject();
-            settings.put("modelPath", pythonFilePath + "/" + modelLabel);
+            settings.put("modelPath", pythonFilePath + "/alg/" + algorithmLabel);
             settings.put("trainDataPath", pythonFilePath + "/" + modelLabel + "/train.csv");
             settings.put("predictDataPath", pythonFilePath + "/task_logs/" + taskLabel + "/predict.csv");
             settings.put("resultDataPath", pythonFilePath + "/task_logs/" + taskLabel + "/result.json");
@@ -941,7 +942,7 @@ public class ModelsServiceImpl extends ServiceImpl<ModelsMapper, Models> impleme
         //准备setting.json
         File settingFile = new File(taskDir, "setting.json");
         JSONObject settings = new JSONObject();
-        settings.put("modelPath", pythonFilePath + "/" + modelLabel);
+        settings.put("modelPath", pythonFilePath + "/alg/" + algorithmLabel);
         settings.put("trainDataPath", pythonFilePath + "/" + modelLabel + "/train.csv");
         settings.put("predictDataPath", pythonFilePath + "/task_logs/" + taskLabel + "/predict.csv");
         settings.put("resultDataPath", pythonFilePath + "/task_logs/" + taskLabel + "/result.json");
