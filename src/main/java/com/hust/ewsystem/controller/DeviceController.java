@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @RestController
@@ -39,6 +40,8 @@ public class DeviceController {
     private final RealPointService realPointService;
 
     private final StandRealRelateService standRealRelateService;
+
+    private final ModelRealRelateService modelRealRelateService;
 
 
     @GetMapping("/list")
@@ -103,6 +106,7 @@ public class DeviceController {
         }
         Integer deviceId = deviceInfoByWarningId.getDeviceId();
         Integer deviceType = deviceInfoByWarningId.getDeviceType();
+        Integer modelId = deviceInfoByWarningId.getModelId();
         Integer pvFarmId = null;
         if(deviceType == 1){
             //获取汇流箱id
@@ -120,23 +124,37 @@ public class DeviceController {
                 StandRealRelate::getRealPointId,
                 StandRealRelate::getStandPointId
         ));
+        List<Integer> realPointIds = modelRealRelateService.list(new QueryWrapper<ModelRealRelate>().eq("model_id", modelId)).stream().map(ModelRealRelate::getRealPointId).collect(Collectors.toList());
         class ExtendedRealPoint extends RealPoint {
             private Integer standPointId;
+            private Integer used;
 
             public Integer getStandPointId() {
                 return standPointId;
             }
-
+            public Integer getUsed() {
+                return used;
+            }
             public void setStandPointId(Integer standPointId) {
                 this.standPointId = standPointId;
             }
+            public void setUsed(Integer used) {
+                this.used = used;
+            }
         }
-        List<ExtendedRealPoint> extendedList = list.stream().map(realPoint -> {
-            ExtendedRealPoint extendedRealPoint = new ExtendedRealPoint();
-            BeanUtils.copyProperties(realPoint, extendedRealPoint);
-            extendedRealPoint.setStandPointId(standRealRelateMap.get(realPoint.getPointId()));
-            return extendedRealPoint;
-        }).collect(Collectors.toList());
+        List<ExtendedRealPoint> extendedList = list.stream()
+                .filter(realPoint -> realPoint.getPointType() == 0 ||(realPoint.getPointType().equals(deviceType) && Objects.equals(realPoint.getDeviceId(), deviceId)))
+                .map(realPoint -> {
+                    ExtendedRealPoint extendedRealPoint = new ExtendedRealPoint();
+                    BeanUtils.copyProperties(realPoint, extendedRealPoint);
+                    extendedRealPoint.setStandPointId(standRealRelateMap.get(realPoint.getPointId()));
+                    if( realPointIds.contains(realPoint.getPointId())) {
+                        extendedRealPoint.setUsed(1); // 已使用
+                    } else {
+                        extendedRealPoint.setUsed(0); // 未使用
+                    }
+                    return extendedRealPoint;
+                }).collect(Collectors.toList());
         return EwsResult.OK("查询成功", extendedList);
     }
     @GetMapping("/getDeviceName")

@@ -69,22 +69,19 @@ public class WarningsServiceImpl extends ServiceImpl<WarningsMapper, Warnings> i
         } else if (inverterId != null) {
             List<Integer> combinerIds = combinerBoxService.list(new QueryWrapper<CombinerBox>().eq("inverter_id", inverterId))
                     .stream().map(CombinerBox::getId).collect(Collectors.toList());
-
             // 构建条件：避免 device_id IN () 的情况
             queryWrapper.nested(wrapper -> wrapper.eq("device_id", inverterId).eq("model_type", 2));
             if (!CollectionUtils.isEmpty(combinerIds)) {
                 queryWrapper.or(wrapper -> wrapper.in("device_id", combinerIds).eq("model_type", 1));
             }
-
             modelIdlist = modelsService.list(queryWrapper).stream().map(Models::getModelId).collect(Collectors.toList());
-        } else if (pvFarmId != null) {
+        }else if (pvFarmId != null && pvFarmId != 0) {
             List<Integer> boxIds = boxTransService.list(new QueryWrapper<BoxTrans>().eq("pv_farm_id", pvFarmId))
                     .stream().map(BoxTrans::getId).collect(Collectors.toList());
             List<Integer> combinerIds = combinerBoxService.list(new QueryWrapper<CombinerBox>().in("box_id", boxIds))
                     .stream().map(CombinerBox::getId).collect(Collectors.toList());
             List<Integer> inverterIds = inverterService.list(new QueryWrapper<Inverter>().in("box_id", boxIds))
                     .stream().map(Inverter::getId).collect(Collectors.toList());
-
             // 构建条件：避免 device_id IN () 的情况
             if (!CollectionUtils.isEmpty(inverterIds)) {
                 queryWrapper.nested(wrapper -> wrapper.in("device_id", inverterIds).eq("model_type", 2));
@@ -92,9 +89,24 @@ public class WarningsServiceImpl extends ServiceImpl<WarningsMapper, Warnings> i
             if (!CollectionUtils.isEmpty(combinerIds)) {
                 queryWrapper.or(wrapper -> wrapper.in("device_id", combinerIds).eq("model_type", 1));
             }
-
             modelIdlist = modelsService.list(queryWrapper).stream().map(Models::getModelId).collect(Collectors.toList());
-        } else {
+        } else if(companyId != null){
+            List<Integer> pvFarmIds = pvFarmService.list(new QueryWrapper<PvFarm>().eq("company_id", companyId)).stream().map(PvFarm::getId).collect(Collectors.toList());
+            List<Integer> boxIds = boxTransService.list(new QueryWrapper<BoxTrans>().in("pv_farm_id", pvFarmIds))
+                    .stream().map(BoxTrans::getId).collect(Collectors.toList());
+            List<Integer> combinerIds = combinerBoxService.list(new QueryWrapper<CombinerBox>().in("box_id", boxIds))
+                    .stream().map(CombinerBox::getId).collect(Collectors.toList());
+            List<Integer> inverterIds = inverterService.list(new QueryWrapper<Inverter>().in("box_id", boxIds))
+                    .stream().map(Inverter::getId).collect(Collectors.toList());
+            // 构建条件：避免 device_id IN () 的情况
+            if (!CollectionUtils.isEmpty(inverterIds)) {
+                queryWrapper.nested(wrapper -> wrapper.in("device_id", inverterIds).eq("model_type", 2));
+            }
+            if (!CollectionUtils.isEmpty(combinerIds)) {
+                queryWrapper.or(wrapper -> wrapper.in("device_id", combinerIds).eq("model_type", 1));
+            }
+            modelIdlist = modelsService.list(queryWrapper).stream().map(Models::getModelId).collect(Collectors.toList());
+        }else {
             List<Integer> boxIds = boxTransService.list().stream().map(BoxTrans::getId).collect(Collectors.toList());
             List<Integer> combinerIds = combinerBoxService.list(new QueryWrapper<CombinerBox>().in("box_id", boxIds))
                     .stream().map(CombinerBox::getId).collect(Collectors.toList());
@@ -142,7 +154,6 @@ public class WarningsServiceImpl extends ServiceImpl<WarningsMapper, Warnings> i
         if (warningLevel != null) {
             queryWrapper2.eq("warning_level", warningLevel);
         }
-
         // 分页查询
         Page<Warnings> warningsPage = new Page<>(page, pageSize);
         Page<Warnings> page1 = page(warningsPage, queryWrapper2);
@@ -234,7 +245,24 @@ public class WarningsServiceImpl extends ServiceImpl<WarningsMapper, Warnings> i
             queryWrapper.eq("device_id", combinerBoxId)
                     .eq("model_type", 1);
             modelIdlist = modelsService.list(queryWrapper).stream().map(Models::getModelId).collect(Collectors.toList());
-        }else{
+        }else if(companyId != null){
+            List<Integer> pvFarmIds = pvFarmService.list(new QueryWrapper<PvFarm>().eq("company_id", companyId)).stream().map(PvFarm::getId).collect(Collectors.toList());
+            List<Integer> boxIds = boxTransService.list(new QueryWrapper<BoxTrans>().in("pv_farm_id", pvFarmIds))
+                    .stream().map(BoxTrans::getId).collect(Collectors.toList());
+            List<Integer> combinerIds = combinerBoxService.list(new QueryWrapper<CombinerBox>().in("box_id", boxIds))
+                    .stream().map(CombinerBox::getId).collect(Collectors.toList());
+            List<Integer> inverterIds = inverterService.list(new QueryWrapper<Inverter>().in("box_id", boxIds))
+                    .stream().map(Inverter::getId).collect(Collectors.toList());
+            // 构建条件：避免 device_id IN () 的情况
+            if (!CollectionUtils.isEmpty(inverterIds)) {
+                queryWrapper.nested(wrapper -> wrapper.in("device_id", inverterIds).eq("model_type", 2));
+            }
+            if (!CollectionUtils.isEmpty(combinerIds)) {
+                queryWrapper.or(wrapper -> wrapper.in("device_id", combinerIds).eq("model_type", 1));
+            }
+            modelIdlist = modelsService.list(queryWrapper).stream().map(Models::getModelId).collect(Collectors.toList());
+        }
+        else{
             List<Integer> boxIds = boxTransService.list().stream().map(BoxTrans::getId).collect(Collectors.toList());
             List<Integer> combinerIds = combinerBoxService.list(new QueryWrapper<CombinerBox>().in("box_id", boxIds)).stream().map(CombinerBox::getId).collect(Collectors.toList());
             List<Integer> inverterIds = inverterService.list(new QueryWrapper<Inverter>().in("box_id", boxIds)).stream().map(Inverter::getId).collect(Collectors.toList());
@@ -269,6 +297,18 @@ public class WarningsServiceImpl extends ServiceImpl<WarningsMapper, Warnings> i
         QueryWrapper<RealPoint> realPointQueryWrapper;
         List<Map<Integer, RealPoint>> relPointAndLableList = new ArrayList<>();
         Map<Integer,RealPoint> relPointAndLableMap;
+        Integer deviceId = queryWarnDetailsDTO.getDeviceId();
+        Integer deviceType = queryWarnDetailsDTO.getDeviceType();
+        Integer pvFarmId = null;
+        if(deviceType == 1){
+            //获取汇流箱id
+            Integer boxId = combinerBoxService.getById(deviceId).getBoxId();
+            pvFarmId = boxTransService.getById(boxId).getPvFarmId();
+        }else if(deviceType == 2){
+            //获取逆变器id
+            Integer boxId = inverterService.getById(deviceId).getBoxId();
+            pvFarmId = boxTransService.getById(boxId).getPvFarmId();
+        }
         for (Integer standPointId : standPointIdList) {
             StandPoint standPoint = standPointMapper.selectById(standPointId);
             queryWrapper = new QueryWrapper<>();
@@ -283,7 +323,13 @@ public class WarningsServiceImpl extends ServiceImpl<WarningsMapper, Warnings> i
                 realPointList.add(standRealRelate.getRealPointId());
             }
             realPointQueryWrapper = new QueryWrapper<>();
-            realPointQueryWrapper.lambda().in(RealPoint::getPointId,realPointList).eq(RealPoint::getDeviceId,queryWarnDetailsDTO.getDeviceId()).eq(RealPoint::getPointType,standPoint.getPointType());
+            if(standPoint.getPointType() == 0){
+                // 如果是标准测点类型为0,则查询对应的真实测点
+                realPointQueryWrapper.lambda().in(RealPoint::getPointId,realPointList).eq(RealPoint::getDeviceId,pvFarmId).eq(RealPoint::getPointType,standPoint.getPointType());
+            }else{
+                // 如果是标准测点类型为1,则查询对应的真实测点
+                realPointQueryWrapper.lambda().in(RealPoint::getPointId,realPointList).eq(RealPoint::getDeviceId,deviceId).eq(RealPoint::getPointType,standPoint.getPointType());
+            }
             RealPoint realPoint = realPointService.getOne(realPointQueryWrapper);
             if (Objects.isNull(realPoint)){
                 String realIdList = StringUtils.join(realPointList, ",");
@@ -294,9 +340,8 @@ public class WarningsServiceImpl extends ServiceImpl<WarningsMapper, Warnings> i
             relPointAndLableMap.put(realPoint.getPointId(), realPoint);
             relPointAndLableList.add(relPointAndLableMap);
         }
-
         // 查询测点值
-        List<TrendDataDTO> realPointValueList = realPointService.getRealPointValueList(relPointAndLableList, queryWarnDetailsDTO);
+        List<TrendDataDTO> realPointValueList = realPointService.getRealPointValueList(relPointAndLableList, queryWarnDetailsDTO,pvFarmId);
         return EwsResult.OK(realPointValueList);
     }
 

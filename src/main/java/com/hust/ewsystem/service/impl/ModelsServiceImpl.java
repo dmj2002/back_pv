@@ -309,7 +309,7 @@ public class ModelsServiceImpl extends ServiceImpl<ModelsMapper, Models> impleme
                     Integer type = entry.getKey();
                     List<RealPoint> point = entry.getValue();
                     // 获取表名
-                    String tableName = getTableName(type) + "_" + getdivceName(type,point);
+                    String tableName = getTableName(type) + "_" + getdeivceName(type,point);
                     List<Map<String ,Object>> data = commonDataService.selectDataByTime(tableName, point.stream().map(RealPoint::getPointLabel).collect(Collectors.toList()),startTime, endTime);
                     for (Map<String ,Object> record : data) {
                         LocalDateTime datetime = ((Timestamp) record.get("datetime")).toLocalDateTime();
@@ -660,7 +660,7 @@ public class ModelsServiceImpl extends ServiceImpl<ModelsMapper, Models> impleme
                     for(Map.Entry<Integer, List<RealPoint>> entry : columnMapping.entrySet()){
                         Integer type = entry.getKey();
                         List<RealPoint> point = entry.getValue();
-                        String tableName = getTableName(type) + "_" + getdivceName(type,point);
+                        String tableName = getTableName(type) + "_" + getdeivceName(type,point);
                         List<Map<String ,Object>> data = commonDataService.selectDataByTime(tableName, point.stream().map(RealPoint::getPointLabel).collect(Collectors.toList()), startTimeStr, windowEndTimeStr);
                         for (Map<String ,Object> record : data) {
                             LocalDateTime datetime = ((Timestamp) record.get("datetime")).toLocalDateTime();
@@ -748,7 +748,7 @@ public class ModelsServiceImpl extends ServiceImpl<ModelsMapper, Models> impleme
             for(Map.Entry<Integer, List<RealPoint>> entry : columnMapping.entrySet()){
                 Integer type = entry.getKey();
                 List<RealPoint> point = entry.getValue();
-                String tableName = getTableName(type) + "_" + getdivceName(type,point);
+                String tableName = getTableName(type) + "_" + getdeivceName(type,point);
                 List<Map<String ,Object>> data = commonDataService.selectDataByTime(tableName, point.stream().map(RealPoint::getPointLabel).collect(Collectors.toList()), startTimeStr, endTimeStr);
                 for (Map<String ,Object> record : data) {
                     LocalDateTime datetime = ((Timestamp) record.get("datetime")).toLocalDateTime();
@@ -1072,7 +1072,7 @@ public class ModelsServiceImpl extends ServiceImpl<ModelsMapper, Models> impleme
         }
     }
 
-    public static String getdivceName(Integer type, List<RealPoint> point) {
+    public static String getdeivceName(Integer type, List<RealPoint> point) {
         if(type == 0){
             return String.valueOf(point.get(0).getPvFarmId());
         }else{

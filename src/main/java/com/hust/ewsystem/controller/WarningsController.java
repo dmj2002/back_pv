@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.hust.ewsystem.DAO.DTO.*;
 import com.hust.ewsystem.DAO.PO.*;
+import com.hust.ewsystem.DAO.VO.Calculate;
 import com.hust.ewsystem.DAO.VO.PicturesVO;
 import com.hust.ewsystem.DAO.VO.WarningsVO;
 import com.hust.ewsystem.common.exception.CrudException;
@@ -69,7 +70,7 @@ public class WarningsController {
                                        @RequestParam(value = "startDate") String startDate,
                                        @RequestParam(value = "endDate", required = false) String endDate,
                                        @RequestParam(value = "warningLevel", required = false) Integer warningLevel,
-                                       @RequestParam(value = "companyId") Integer companyId,
+                                       @RequestParam(value = "companyId", required = false) Integer companyId,
                                        @RequestParam(value = "pvFarmId", required = false) Integer pvFarmId,
                                        @RequestParam(value = "inverterId", required = false) Integer inverterId,
                                        @RequestParam(value = "combinerBoxId", required = false) Integer combinerBoxId){
@@ -79,7 +80,7 @@ public class WarningsController {
     public EwsResult<?> getWarningList(@RequestParam(value = "page") int page,
                                        @RequestParam(value = "pageSize") int pageSize,
                                        @RequestParam(value = "warningLevel", required = false) Integer warningLevel,
-                                       @RequestParam(value = "companyId") Integer companyId,
+                                       @RequestParam(value = "companyId",required = false) Integer companyId,
                                        @RequestParam(value = "pvFarmId", required = false) Integer pvFarmId,
                                        @RequestParam(value = "inverterId", required = false) Integer inverterId,
                                        @RequestParam(value = "combinerBoxId", required = false) Integer combinerBoxId){
@@ -317,14 +318,22 @@ public class WarningsController {
             standPointDTO.setPointValue(valueList);
             standPointDTOList.add(standPointDTO);
         });
+        Calculate calculate = new Calculate();
         List<CommonData> calculateValue = new ArrayList<>();
+        String picName = null;
         if(picture.getId() >=1 && picture.getId() <= 6){
             //如果是图片1-6，则需要获取计算值就用这个表达式，你自己给功率起个英文名：光伏组串功率=inverter_branch_voltage_1*inverter_branch_current_1
             calculateValue = setCalculateValue(standPointDTOList,"multiply","inverter_branch_voltage_1", "inverter_branch_current_1");
+            picName = "光伏组串功率";
+            standPointDTOList.removeIf(dto -> dto.getPointLabel().equals("inverter_branch_voltage_1") || dto.getPointLabel().equals("inverter_branch_current_1"));
         }else if(picture.getId() == 55 || picture.getId() == 56){
             calculateValue = setCalculateValue(standPointDTOList,"div","inverter_output_active_power", "inverter_input_total_DC_power");
+            picName = "逆变器效率";
+            standPointDTOList.removeIf(dto -> dto.getPointLabel().equals("inverter_output_active_power") || dto.getPointLabel().equals("inverter_input_total_DC_power"));
         }
-        picturesVO.setCalculateValue(calculateValue);
+        calculate.setPicName(picName);
+        calculate.setValue(calculateValue);
+        picturesVO.setCalculateValue(calculate);
         picturesVO.setPoints(standPointDTOList);
         return picturesVO;
     }
@@ -355,7 +364,7 @@ public class WarningsController {
                     .map(voltageData -> {
                         Double currentValue = currentValueMap.get(voltageData.getDatetime());
                         Double powerValue = null;
-                        if(operations.equals("div") && currentValue == 0){
+                        if(operations.equals("div") && currentValue != 0){
                             powerValue = voltageData.getValue() / currentValue;
                         }
                         else if(operations.equals("multiply")){

@@ -12,4 +12,6 @@ public class DeviceVO {
     private Integer deviceId;
 
     private Integer deviceType;
+
+    private Integer modelId;
 }

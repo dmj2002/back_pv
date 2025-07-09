@@ -13,13 +13,15 @@ import com.hust.ewsystem.mapper.CommonDataMapper;
 import com.hust.ewsystem.mapper.RealPointMapper;
 import com.hust.ewsystem.service.RealPointService;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
-import java.time.LocalDateTime;
+import java.sql.Timestamp;
 import java.util.*;
 
 import static com.hust.ewsystem.service.impl.ModelsServiceImpl.getTableName;
+import static com.hust.ewsystem.service.impl.ModelsServiceImpl.getdeivceName;
 
 
 @Service
@@ -32,22 +34,23 @@ public class RealPointServiceImpl extends ServiceImpl<RealPointMapper, RealPoint
 
     @Override
     @DS("slave")
-    public List<TrendDataDTO> getRealPointValueList(List<Map<Integer, RealPoint>> pointLabels, QueryWarnDetailsDTO queryWarnDetailsDTO) {
-        List<CommonData> valueList = new ArrayList<>();
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public List<TrendDataDTO> getRealPointValueList(List<Map<Integer, RealPoint>> pointLabels, QueryWarnDetailsDTO queryWarnDetailsDTO, Integer pvFarmId) {
         List<TrendDataDTO> result = new LinkedList<>();
         String startDate = DateUtil.dateTimeToDateString(queryWarnDetailsDTO.getStartDate(), CommonConstant.DATETIME_FORMAT_1);
         String endDate = DateUtil.dateTimeToDateString(queryWarnDetailsDTO.getEndDate(), CommonConstant.DATETIME_FORMAT_1);
         TrendDataDTO trendDataDTO;
         for (Map<Integer, RealPoint> point : pointLabels) {
             for (Map.Entry<Integer, RealPoint> entry : point.entrySet()) {
-                String tableName = getTableName(entry.getValue().getPointType()) + "_" + queryWarnDetailsDTO.getDeviceId();
+                List<CommonData> valueList = new ArrayList<>();
+                String tableName = getTableName(entry.getValue().getPointType()) + "_" + getdeivceName(entry.getValue().getPointType(), Collections.singletonList(entry.getValue()));
                 String pointLabel = entry.getValue().getPointLabel().toLowerCase();
                 List<String> pointLabelList = Collections.singletonList(pointLabel);
                 List<Map<String, Object>> mapList = commonDataMapper.selectDataByTime(tableName, pointLabelList, startDate, endDate);
                 for(Map<String, Object> map : mapList) {
                     CommonData commonData = new CommonData();
-                    commonData.setDatetime((LocalDateTime) map.get("datetime"));
-                    commonData.setValue((Double) map.get(pointLabel));
+                    commonData.setDatetime(((Timestamp) map.get("datetime")).toLocalDateTime());
+                    commonData.setValue(((Float) map.get(pointLabel)).doubleValue());
                     valueList.add(commonData);
                 }
                 trendDataDTO = new TrendDataDTO();
