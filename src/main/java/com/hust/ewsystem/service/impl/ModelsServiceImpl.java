@@ -612,7 +612,7 @@ public class ModelsServiceImpl extends ServiceImpl<ModelsMapper, Models> impleme
                         .setStartTime(startTimeDate)
                         .setEndTime(endTimeDate);
                 tasksMapper.insert(newtask);
-                Integer taskId= newtask.getTaskId();
+                Long taskId= newtask.getTaskId();
                 File taskDir = new File(pythonFilePath + "/task_logs/" + taskLabel);
                 if (!taskDir.exists()) {
                     if (!taskDir.mkdirs()) {
@@ -714,7 +714,7 @@ public class ModelsServiceImpl extends ServiceImpl<ModelsMapper, Models> impleme
                     .setTaskLabel(taskLabel)
                     .setStartTime(LocalDateTime.now());
             tasksMapper.insert(newtask);
-            Integer taskId= newtask.getTaskId();
+            Long taskId= newtask.getTaskId();
             File taskDir = new File(pythonFilePath + "/task_logs/" + taskLabel);
             if (!taskDir.exists()) {
                 if (!taskDir.mkdirs()) {
@@ -784,7 +784,7 @@ public class ModelsServiceImpl extends ServiceImpl<ModelsMapper, Models> impleme
         }
     }
 
-    public void executePredict(String filepath, String algorithmLabel, String taskLabel,Integer modelId,Integer taskId) {
+    public void executePredict(String filepath, String algorithmLabel, String taskLabel,Integer modelId,Long taskId) {
         Process process = null;
         boolean interrupted = false;
         try {
@@ -841,7 +841,7 @@ public class ModelsServiceImpl extends ServiceImpl<ModelsMapper, Models> impleme
         }
     }
 
-    private void readAndSaveResults(String filepath, String taskLabel,Integer modelId,Integer taskId) {
+    private void readAndSaveResults(String filepath, String taskLabel,Integer modelId,Long taskId) {
         try {
             String resultFilePath = filepath + "/task_logs/" + taskLabel + "/result.json";
 
@@ -878,7 +878,7 @@ public class ModelsServiceImpl extends ServiceImpl<ModelsMapper, Models> impleme
         }
     }
 
-    private void processAlerts(List<JSONObject> alertList, int modelId, int taskId,DateTimeFormatter formatter) {
+    private void processAlerts(List<JSONObject> alertList, int modelId, Long taskId,DateTimeFormatter formatter) {
         Iterator<JSONObject> iterator = alertList.iterator();
         while (iterator.hasNext()) {
             JSONObject alert = iterator.next();

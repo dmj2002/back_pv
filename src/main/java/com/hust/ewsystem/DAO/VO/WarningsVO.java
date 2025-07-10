@@ -68,7 +68,7 @@ public class WarningsVO implements Serializable {
     /**
      * 任务 id
      */
-    private Integer taskId;
+    private Long taskId;
 
 
     private Integer deviceId;
