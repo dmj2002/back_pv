@@ -321,19 +321,27 @@ public class WarningsController {
         Calculate calculate = new Calculate();
         List<CommonData> calculateValue = new ArrayList<>();
         String picName = null;
+        StandPointDTO calculatePointDTO = new StandPointDTO();
         if(picture.getId() >=1 && picture.getId() <= 6){
             //如果是图片1-6，则需要获取计算值就用这个表达式，你自己给功率起个英文名：光伏组串功率=inverter_branch_voltage_1*inverter_branch_current_1
             calculateValue = setCalculateValue(standPointDTOList,"multiply","inverter_branch_voltage_1", "inverter_branch_current_1");
-            picName = "光伏组串功率";
+            calculatePointDTO.setPointLabel("pvStringPower");
+            calculatePointDTO.setPointDescription("光伏组串功率");
             standPointDTOList.removeIf(dto -> dto.getPointLabel().equals("inverter_branch_voltage_1") || dto.getPointLabel().equals("inverter_branch_current_1"));
         }else if(picture.getId() == 55 || picture.getId() == 56){
             calculateValue = setCalculateValue(standPointDTOList,"div","inverter_output_active_power", "inverter_input_total_DC_power");
-            picName = "逆变器效率";
+            calculatePointDTO.setPointLabel("Inverter Efficiency");
+            calculatePointDTO.setPointDescription("逆变器效率");
             standPointDTOList.removeIf(dto -> dto.getPointLabel().equals("inverter_output_active_power") || dto.getPointLabel().equals("inverter_input_total_DC_power"));
         }
-        calculate.setPicName(picName);
-        calculate.setValue(calculateValue);
-        picturesVO.setCalculateValue(calculate);
+
+        calculatePointDTO.setPointId(0); // 请手动设置
+        calculatePointDTO.setPointValue(calculateValue); // 将 calculate 的值赋值给 pointValue
+
+//        calculate.setPicName(picName);
+//        calculate.setValue(calculateValue);
+//        picturesVO.setCalculateValue(calculate);
+        standPointDTOList.add(calculatePointDTO);
         picturesVO.setPoints(standPointDTOList);
         return picturesVO;
     }
