@@ -294,20 +294,32 @@ public class WarningsController {
             StandPoint standPoint = standPointService.getById(pictureStandRelate.getStandPointId());
             standPointDTO.setPointDescription(standPoint.getPointDescription());
             standPointDTO.setPointLabel(standPoint.getPointLabel());
-            List<Integer> realPointIds = standRealRelateService.list(new QueryWrapper<StandRealRelate>().eq("stand_point_id", pictureStandRelate.getStandPointId())).stream().map(StandRealRelate::getRealPointId).collect(Collectors.toList());
+
+            List<Integer> realPointIds = standRealRelateService.list(new QueryWrapper<StandRealRelate>().eq("stand_point_id", pictureStandRelate.getStandPointId()))
+                    .stream()
+                    .map(StandRealRelate::getRealPointId)
+                    .collect(Collectors.toList());
+
             RealPoint one;
-            if(standPoint.getPointType() == 0){
+            if (standPoint.getPointType() == 0) {
                 one = realPointService.getOne(new QueryWrapper<RealPoint>().in("point_id", realPointIds).eq("device_id", pvFarmId).eq("point_type", standPoint.getPointType()));
-            }else{
+            } else {
                 one = realPointService.getOne(new QueryWrapper<RealPoint>().in("point_id", realPointIds).eq("device_id", deviceId).eq("point_type", deviceType));
             }
+
+            // 如果 one 为 null，直接跳过当前循环
+            if (one == null) {
+                return; // 跳过当前 pictureStandRelate
+            }
+
             Integer finalId = standPoint.getPointType() == 0 ? pvFarmId : deviceId;
             String tableName = getTableName(standPoint.getPointType()) + "_" + finalId;
             String pointLabel = one.getPointLabel().toLowerCase();
             List<String> pointLabelList = Collections.singletonList(pointLabel);
-            List<Map<String, Object>> mapList = commonDataService.selectDataByTime(tableName,pointLabelList, adjustedStartTime, endTime);
+            List<Map<String, Object>> mapList = commonDataService.selectDataByTime(tableName, pointLabelList, adjustedStartTime, endTime);
+
             List<CommonData> valueList = new ArrayList<>();
-            for(Map<String, Object> map : mapList) {
+            for (Map<String, Object> map : mapList) {
                 CommonData commonData = new CommonData();
                 LocalDateTime datetime = ((Timestamp) map.get("datetime")).toLocalDateTime();
                 commonData.setDatetime(datetime);
@@ -315,9 +327,11 @@ public class WarningsController {
                 commonData.setValue(value);
                 valueList.add(commonData);
             }
+
             standPointDTO.setPointValue(valueList);
             standPointDTOList.add(standPointDTO);
         });
+
         Calculate calculate = new Calculate();
         List<CommonData> calculateValue = new ArrayList<>();
         String picName = null;
