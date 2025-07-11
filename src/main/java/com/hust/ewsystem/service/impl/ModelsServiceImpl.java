@@ -700,8 +700,9 @@ public class ModelsServiceImpl extends ServiceImpl<ModelsMapper, Models> impleme
                 e.printStackTrace();
             }
         };
+        int randomDelay = ThreadLocalRandom.current().nextInt(0, 1000);
         // 定期调度任务
-        ScheduledFuture<?> scheduledTask =scheduler.scheduleWithFixedDelay(task, 0, alertInterval, TimeUnit.SECONDS);
+        ScheduledFuture<?> scheduledTask =scheduler.scheduleWithFixedDelay(task, randomDelay, alertInterval, TimeUnit.SECONDS);
         taskMap.put(modelLabel + "_predict", scheduledTask);
     }
 
