@@ -10,9 +10,9 @@ import com.hust.ewsystem.DAO.VO.StandPointVO;
 import com.hust.ewsystem.DAO.VO.WarningsVO;
 import org.apache.ibatis.annotations.Param;
 
-import javax.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 
 
 public interface WarningsMapper extends BaseMapper<Warnings> {
@@ -31,4 +31,6 @@ public interface WarningsMapper extends BaseMapper<Warnings> {
     List<WarningsVO> selectWarningsDesc(@Param("param") QueryWarnInfoDTO queryWarnInfoDTO);
 
     List<WarningsVO> selectWarningsNoPage(@Param("param") QueryWarnInfoDTO queryWarnInfoDTO);
+
+    List<WarnStatusDTO> batchGetCount(@Param("modelIds")Set<Integer> allModelIds, @Param("startTime") LocalDateTime startDate, @Param("endTime") LocalDateTime endDate);
 }

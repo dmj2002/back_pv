@@ -13,6 +13,8 @@ public class WarnStatusDTO implements Serializable {
 
     private static final long serialVersionUID = 4322558269725152286L;
 
+    private int modelId;
+
     /**
      * 一级预警待处理数 预警状态为0 预警等级为1的数量
      */

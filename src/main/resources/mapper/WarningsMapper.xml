@@ -96,6 +96,29 @@
         </if>
     </select>
 
+    <select id="batchGetCount" resultType="com.hust.ewsystem.DAO.DTO.WarnStatusDTO">
+        SELECT
+        w.model_id AS modelId,
+        COUNT(CASE WHEN w.warning_status = 0 AND w.warning_level = 1 THEN 1 ELSE NULL END) AS warningLevel1waitDone,
+        COUNT(CASE WHEN w.warning_status = 0 AND warning_level = 2 THEN 1 ELSE NULL END) AS warningLevel2waitDone,
+        COUNT(CASE WHEN w.warning_status = 1 AND w.warning_level = 1 THEN 1 ELSE NULL END) AS warningLevel1waitHangUp,
+        COUNT(CASE WHEN w.warning_status = 1 AND w.warning_level = 2 THEN 1 ELSE NULL END) AS warningLevel2waitHangUp,
+        COUNT(CASE WHEN w.warning_status = 3 AND w.warning_level = 1 THEN 1 ELSE NULL END) AS warningLevel1waitCloseWait,
+        COUNT(CASE WHEN w.warning_status = 3 AND w.warning_level = 2 THEN 1 ELSE NULL END) AS warningLevel2waitCloseWait
+        FROM warnings w
+        WHERE w.model_id IN
+        <foreach collection="modelIds" item="modelId" open="(" separator="," close=")">
+            #{modelId}
+        </foreach>
+        <if test="startDate != null">
+            AND w.start_time &gt;= #{startDate}
+        </if>
+        <if test="endDate != null">
+            AND w.end_time &lt;= #{endDate}
+        </if>
+        GROUP BY w.model_id
+    </select>
+
     <select id="selectWarningsPage" resultMap="WarningResultMap">
         SELECT w.*, m.device_id, m.model_type
         FROM warnings w
