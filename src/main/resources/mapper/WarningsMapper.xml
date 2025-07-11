@@ -110,11 +110,11 @@
         <foreach collection="modelIds" item="modelId" open="(" separator="," close=")">
             #{modelId}
         </foreach>
-        <if test="startDate != null">
-            AND w.start_time &gt;= #{startDate}
+        <if test="startTime != null">
+            AND w.start_time &gt;= #{startTime}
         </if>
-        <if test="endDate != null">
-            AND w.end_time &lt;= #{endDate}
+        <if test="endTime != null">
+            AND w.end_time &lt;= #{endTime}
         </if>
         GROUP BY w.model_id
     </select>
