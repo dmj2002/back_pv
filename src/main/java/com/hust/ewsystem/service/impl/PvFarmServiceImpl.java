@@ -225,7 +225,7 @@ public class PvFarmServiceImpl extends ServiceImpl<PvFarmMapper, PvFarm> impleme
                     waitDoneDTO.setWarningLevel2waitCloseWaitSum(infoType == 0 || infoType == 2  ? warningLevel2waitCloseWaitSum : 0);
 
                     if (CommonConstant.NUM_COMMON_3.equals(infoType) || CommonConstant.NUM_COMMON_0.equals(infoType)){
-                        Integer rePortSum = combinerReportCounts.get(waitDoneInfo.getDeviceId());
+                        Integer rePortSum = combinerReportCounts.get(waitDoneDTO.getDeviceId());
                         waitDoneDTO.setReportSum(rePortSum);
                     }
                 }
