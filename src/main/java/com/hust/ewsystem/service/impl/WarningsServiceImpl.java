@@ -310,6 +310,7 @@ public class WarningsServiceImpl extends ServiceImpl<WarningsMapper, Warnings> i
             pvFarmId = boxTransService.getById(boxId).getPvFarmId();
         }
         for (Integer standPointId : standPointIdList) {
+            if(standPointId == null)continue;
             StandPoint standPoint = standPointMapper.selectById(standPointId);
             queryWrapper = new QueryWrapper<>();
             queryWrapper.lambda().eq(StandRealRelate::getStandPointId,standPointId);
