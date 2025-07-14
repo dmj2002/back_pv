@@ -702,8 +702,12 @@ public class ModelsServiceImpl extends ServiceImpl<ModelsMapper, Models> impleme
         };
         int randomDelay = ThreadLocalRandom.current().nextInt(0, 1000);
         // 定期调度任务
-        ScheduledFuture<?> scheduledTask =scheduler.scheduleWithFixedDelay(task, randomDelay, alertInterval, TimeUnit.SECONDS);
-        taskMap.put(modelLabel + "_predict", scheduledTask);
+        if (!taskMap.containsKey(modelLabel + "_predict")) {
+            ScheduledFuture<?> scheduledTask = scheduler.scheduleWithFixedDelay(task, randomDelay, alertInterval, TimeUnit.SECONDS);
+            taskMap.put(modelLabel + "_predict", scheduledTask);
+        } else {
+            System.out.println("任务已存在，无法重复添加: " + modelLabel + "_predict");
+        }
     }
 
     private void prePredict(Integer modelId, String modelLabel, String algorithmLabel, Integer alertWindowSize) {
